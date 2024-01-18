@@ -18,99 +18,99 @@ PROGRAM Bubble_Bobble;
 
 CONST
 //GAME DATA FILES
-    game_h  = "\bubdiv\gamedata\hi_lev.dat";  //Hiscore and level reached
-    game_c  = "\bubdiv\gamedata\count.dat";   //Game Special Item Counters
-    game_k  = "\bubdiv\gamedata\keys.dat";    //game player keys
-    game_s  = "\bubdiv\gamedata\settings.dat";//game settings
+    game_h  = "/bubdiv/gamedata/hi_lev.dat";  //Hiscore and level reached
+    game_c  = "/bubdiv/gamedata/count.dat";   //Game Special Item Counters
+    game_k  = "/bubdiv/gamedata/keys.dat";    //game player keys
+    game_s  = "/bubdiv/gamedata/settings.dat";//game settings
 
 //Level and Baddie Data Locations and Names
-    level_n = "\bubdiv\gamedata\level1.dat";
-    level_e = "\bubdiv\gamedata\level2.dat";
-    bad_n   = "\bubdiv\gamedata\Nasties1.dat";
-    bad_e   = "\bubdiv\gamedata\Nasties2.dat";
+    level_n = "/bubdiv/gamedata/level1.dat";
+    level_e = "/bubdiv/gamedata/level2.dat";
+    bad_n   = "/bubdiv/gamedata/Nasties1.dat";
+    bad_e   = "/bubdiv/gamedata/Nasties2.dat";
 //Hardness maps
-    p_map1 = "\bubdiv\fpg\levplat1.map";
-    p_map2 = "\bubdiv\fpg\levplat2.map";
-    p_bub1 = "\bubdiv\fpg\levbub1.map";
-    p_bub2 = "\bubdiv\fpg\levbub2.map";
+    p_map1 = "/bubdiv/fpg/levplat1.map";
+    p_map2 = "/bubdiv/fpg/levplat2.map";
+    p_bub1 = "/bubdiv/fpg/levbub1.map";
+    p_bub2 = "/bubdiv/fpg/levbub2.map";
 
 
 //GRAPHIC FILE LOCATION CONSTANTS
-    blocksfloc = "\bubdiv\fpg\bb_block.fpg";
-    platfloc   = "\bubdiv\fpg\bb_plbub.fpg";
-    sprfloc    = "\bubdiv\fpg\bb_spr.fpg";
-    sprfloc2   = "\bubdiv\fpg\itemsfoo.fpg";
-    sprfloc3   = "\bubdiv\fpg\titles.fpg";
+    blocksfloc = "/bubdiv/fpg/bb_block.fpg";
+    platfloc   = "/bubdiv/fpg/bb_plbub.fpg";
+    sprfloc    = "/bubdiv/fpg/bb_spr.fpg";
+    sprfloc2   = "/bubdiv/fpg/itemsfoo.fpg";
+    sprfloc3   = "/bubdiv/fpg/titles.fpg";
 //Palette
-    palfloc    = "\bubdiv\bbob.pal";    //for the game and title screen
+    palfloc    = "/bubdiv/bbob.pal";    //for the game and title screen
 //Fonts
-    silverfnt  = "\bubdiv\fonts\silver.fnt";
-    redfnt     = "\bubdiv\fonts\red.fnt";
-    bluefnt    = "\bubdiv\fonts\blue.fnt";
-    goldfnt    = "\bubdiv\fonts\gold.fnt";
-    grnfnt     = "\bubdiv\fonts\green.fnt";
-    numfnt     = "\bubdiv\fonts\numbers.fnt";
-    G_potfnt   = "\bubdiv\fonts\p_green.fnt";
-    B_potfnt   = "\bubdiv\fonts\p_blue.fnt";
-    levfnt     = "\bubdiv\fonts\lev.fnt"; //level screen
-    editfnt    = "\bubdiv\fonts\editor.fnt";
+    silverfnt  = "/bubdiv/fonts/silver.fnt";
+    redfnt     = "/bubdiv/fonts/red.fnt";
+    bluefnt    = "/bubdiv/fonts/blue.fnt";
+    goldfnt    = "/bubdiv/fonts/gold.fnt";
+    grnfnt     = "/bubdiv/fonts/green.fnt";
+    numfnt     = "/bubdiv/fonts/numbers.fnt";
+    G_potfnt   = "/bubdiv/fonts/p_green.fnt";
+    B_potfnt   = "/bubdiv/fonts/p_blue.fnt";
+    levfnt     = "/bubdiv/fonts/lev.fnt"; //level screen
+    editfnt    = "/bubdiv/fonts/editor.fnt";
 
     n_sounds  = 48; //to load
     n_effects = 25; //in sound array handler
     n_music   = 8;
 
 //pri_1
-    effect1   = "\bubdiv\sounds\music\bb_start.wav";
-    effect2   = "\bubdiv\sounds\music\bb_mus.wav";
-    effect3   = "\bubdiv\sounds\music\bb_fast.wav";
-    effect4   = "\bubdiv\sounds\music\sroom.wav";
-    effect5   = "\bubdiv\sounds\effects\clock.wav";
-    effect6   = "\bubdiv\sounds\music\hurry.wav";
-    effect7   = "\bubdiv\sounds\music\skel2.wav";
-    effect8   = "\bubdiv\sounds\music\Hi_Music.wav";
-    effect9   = "\bubdiv\sounds\music\Hi_end.wav";
-    effect10  = "\bubdiv\sounds\music\Comet.wav";
-    effect11  = "\bubdiv\sounds\music\BossMus.wav";
-    effect12  = "\bubdiv\sounds\music\complete.wav";
-    effect13  = "\bubdiv\sounds\music\extend.wav";
-    effect14  = "\bubdiv\sounds\music\extend2.wav";
-    effect15  = "\bubdiv\sounds\music\potion2.wav";
-    effect16  = "\bubdiv\sounds\effects\wcross.wav";
-    effect17  = "\bubdiv\sounds\effects\explos.wav";
+    effect1   = "/bubdiv/sounds/music/bb_start.wav";
+    effect2   = "/bubdiv/sounds/music/bb_mus.wav";
+    effect3   = "/bubdiv/sounds/music/bb_fast.wav";
+    effect4   = "/bubdiv/sounds/music/sroom.wav";
+    effect5   = "/bubdiv/sounds/effects/clock.wav";
+    effect6   = "/bubdiv/sounds/music/hurry.wav";
+    effect7   = "/bubdiv/sounds/music/skel2.wav";
+    effect8   = "/bubdiv/sounds/music/Hi_Music.wav";
+    effect9   = "/bubdiv/sounds/music/Hi_end.wav";
+    effect10  = "/bubdiv/sounds/music/Comet.wav";
+    effect11  = "/bubdiv/sounds/music/BossMus.wav";
+    effect12  = "/bubdiv/sounds/music/complete.wav";
+    effect13  = "/bubdiv/sounds/music/extend.wav";
+    effect14  = "/bubdiv/sounds/music/extend2.wav";
+    effect15  = "/bubdiv/sounds/music/potion2.wav";
+    effect16  = "/bubdiv/sounds/effects/wcross.wav";
+    effect17  = "/bubdiv/sounds/effects/explos.wav";
 //pri 2
-    effect18  = "\bubdiv\sounds\effects\firesph.wav";
-    effect19  = "\bubdiv\sounds\effects\lning2.wav";
-    effect20  = "\bubdiv\sounds\effects\boom.wav";
-    effect21  = "\bubdiv\sounds\effects\bell.wav";
-    effect22  = "\bubdiv\sounds\effects\bigfood.wav";
-    effect23  = "\bubdiv\sounds\effects\laugh1.wav";
-    effect24  = "\bubdiv\sounds\effects\laugh2.wav";
-    effect25  = "\bubdiv\sounds\effects\slurping.wav";
-    effect26  = "\bubdiv\sounds\effects\burp.wav";
+    effect18  = "/bubdiv/sounds/effects/firesph.wav";
+    effect19  = "/bubdiv/sounds/effects/lning2.wav";
+    effect20  = "/bubdiv/sounds/effects/boom.wav";
+    effect21  = "/bubdiv/sounds/effects/bell.wav";
+    effect22  = "/bubdiv/sounds/effects/bigfood.wav";
+    effect23  = "/bubdiv/sounds/effects/laugh1.wav";
+    effect24  = "/bubdiv/sounds/effects/laugh2.wav";
+    effect25  = "/bubdiv/sounds/effects/slurping.wav";
+    effect26  = "/bubdiv/sounds/effects/burp.wav";
 //pri 4
-    effect27  = "\bubdiv\sounds\music\poweron.wav";
-    effect28  = "\bubdiv\sounds\effects\Bub3.wav";
-    effect29  = "\bubdiv\sounds\effects\Bub2.wav";
-    effect30  = "\bubdiv\sounds\effects\Food.wav";
-    effect31  = "\bubdiv\sounds\effects\jump1.wav";
-    effect32  = "\bubdiv\sounds\effects\multi.wav";
-    effect33  = "\bubdiv\sounds\effects\multfood.wav";
-    effect34  = "\bubdiv\sounds\effects\Item.wav";
-    effect35  = "\bubdiv\sounds\effects\wpop.wav";
-    effect36  = "\bubdiv\sounds\effects\Die.wav";
-    effect37  = "\bubdiv\sounds\effects\collect.wav";
-    effect38  = "\bubdiv\sounds\effects\fireball.wav";
-    effect39  = "\bubdiv\sounds\effects\firedie.wav";
-    effect40  = "\bubdiv\sounds\effects\lning1.wav";
-    effect41  = "\bubdiv\sounds\effects\rock.wav";
-    effect42  = "\bubdiv\sounds\effects\laser.wav";
-    effect43  = "\bubdiv\sounds\effects\Botchuck.wav";
-    effect44  = "\bubdiv\sounds\effects\Bothit.wav";
-    effect45  = "\bubdiv\sounds\effects\Boing.wav";
-    effect46  = "\bubdiv\sounds\effects\coin.wav";
+    effect27  = "/bubdiv/sounds/music/poweron.wav";
+    effect28  = "/bubdiv/sounds/effects/Bub3.wav";
+    effect29  = "/bubdiv/sounds/effects/Bub2.wav";
+    effect30  = "/bubdiv/sounds/effects/Food.wav";
+    effect31  = "/bubdiv/sounds/effects/jump1.wav";
+    effect32  = "/bubdiv/sounds/effects/multi.wav";
+    effect33  = "/bubdiv/sounds/effects/multfood.wav";
+    effect34  = "/bubdiv/sounds/effects/Item.wav";
+    effect35  = "/bubdiv/sounds/effects/wpop.wav";
+    effect36  = "/bubdiv/sounds/effects/Die.wav";
+    effect37  = "/bubdiv/sounds/effects/collect.wav";
+    effect38  = "/bubdiv/sounds/effects/fireball.wav";
+    effect39  = "/bubdiv/sounds/effects/firedie.wav";
+    effect40  = "/bubdiv/sounds/effects/lning1.wav";
+    effect41  = "/bubdiv/sounds/effects/rock.wav";
+    effect42  = "/bubdiv/sounds/effects/laser.wav";
+    effect43  = "/bubdiv/sounds/effects/Botchuck.wav";
+    effect44  = "/bubdiv/sounds/effects/Bothit.wav";
+    effect45  = "/bubdiv/sounds/effects/Boing.wav";
+    effect46  = "/bubdiv/sounds/effects/coin.wav";
 //end of game effects
-    effect47  = "\bubdiv\sounds\effects\glass.wav";
-    effect48  = "\bubdiv\sounds\effects\multinew.wav";
+    effect47  = "/bubdiv/sounds/effects/glass.wav";
+    effect48  = "/bubdiv/sounds/effects/multinew.wav";
 
 //sound array ids
 //used to trigger the sound from the sound_ids store
@@ -192,8 +192,8 @@ CONST
 
     n_mod = 2; //number of song modules
 
-    mod1 = "\bubdiv\sounds\songs\Bbobble.mod";
-    mod2 = "\bubdiv\sounds\songs\remix2.mod";
+    mod1 = "/bubdiv/sounds/songs/Bbobble.mod";
+    mod2 = "/bubdiv/sounds/songs/remix2.mod";
 
 //Logic
     Yes = 1;
@@ -204,11 +204,11 @@ CONST
     Face_Up    = 1; //Used by Diag Sprites
     Face_Down  = 2;
 //Save Games
-    instr1    = "\bubdiv\gamedata\instr.dat";
-    dem_dino1 = "\bubdiv\gamedata\demo_d1_1.dat";
-    dem_dino2 = "\bubdiv\gamedata\demo_d2_1.dat";
-    extend_d1 = "\bubdiv\gamedata\extend_1.dat";
-    extend_d2 = "\bubdiv\gamedata\extend_2.dat";
+    instr1    = "/bubdiv/gamedata/instr.dat";
+    dem_dino1 = "/bubdiv/gamedata/demo_d1_1.dat";
+    dem_dino2 = "/bubdiv/gamedata/demo_d2_1.dat";
+    extend_d1 = "/bubdiv/gamedata/extend_1.dat";
+    extend_d2 = "/bubdiv/gamedata/extend_2.dat";
 
 //  End Game Scroll text in seconds to scroll for
     stext_secs = 32;
@@ -1658,7 +1658,7 @@ keynames[]="ESC","1","2","3","4","5","6","7","8","9","0","-","+"
           ,"ALT","SPACE","CAPS LOCK"
           ,"F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","NUM LOCK","SCR LOCK"
           ,"HOME","U CURSOR","PG UP","NUMPAD -","L CURSOR","NUMPAD 5","R CURSOR","NUMPAD +","END"
-          ,"D CURSOR","PAGE DOWN","INS","DELETE","?","?","\";
+          ,"D CURSOR","PAGE DOWN","INS","DELETE","?","?","\\";
 
 //For Displaying key moves to screen for debuging player record
 move_dis[6] =
