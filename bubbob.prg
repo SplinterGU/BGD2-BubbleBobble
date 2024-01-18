@@ -2430,12 +2430,12 @@ PRIVATE
     int n_anim;
     int a_del;
 BEGIN
-// jjp
+#if 0 // jjp
 signal( type P_Anim, s_kill );
 tscreen_adv = TRUE;
 s_trigger[ e_life ] = TRUE;
 return;
-
+#endif
     file = titlesfile;
     Fade_On(200);
     DS_Adv_To_Main_Check();
