@@ -81,7 +81,7 @@ CONST
     editfnt = "fnt/editor.fnt";
     n_sounds = 48; //to load
     n_effects = 25; //in sound array handler
-    n_music = 8;
+
     //pri_1
     effect1 = "wav/bb_start.wav";
     effect2 = "wav/bb_mus.wav";
@@ -190,25 +190,19 @@ CONST
     e_coin = 45; //46
     e_glass = 46;
     e_multinew = 47;
+
     //Effect channel to use
     pri_1 = 1;
     pri_2 = 2;
     pri_3 = 3;
+
     //stop what samples or music/mod
     stop_none = 0;
+
     //    stop_effects = 1;
     stop_music = 2;
     stop_all = 3;
-    //music song effects selection
-    sel_effects = 0; //not used
-    sel_music = 1;
-    sel_song = 2;
-    //MODS
-    song1 = 1; //which song selected
-    song2 = 2;
-    n_mod = 2; //number of song modules
-    mod1 = "mod/bbobble.mod";
-    mod2 = "mod/remix2.mod";
+
     //Logic
     Yes = 1;
     No = 0;
@@ -216,14 +210,17 @@ CONST
     Face_Right = 2;
     Face_Up = 1; //Used by Diag Sprites
     Face_Down = 2;
+
     //Save Games
     instr1 = "dat/instr.dat";
     dem_dino1 = "dat/demo_d1_1.dat";
     dem_dino2 = "dat/demo_d2_1.dat";
     extend_d1 = "dat/extend_1.dat";
     extend_d2 = "dat/extend_2.dat";
+
     //  End Game Scroll text in seconds to scroll for
     stext_secs = 32;
+
     //ANIMATION CONSTANTS
     grpclr_block = 4;
     grpclr_secret = 3;
@@ -747,7 +744,7 @@ CONST
     sml_xloc = 44; //small blocks startin pos on screen
     sml_yloc = 12;
     sml_xloc2 = 44 + 8; //small Shadow blocks startin pos on screen
-    sml_yloc2 = -10;
+    sml_yloc2 = 22;
     big_xloc = 20; //big blocks top right
     big_yloc = 16;
     clipx = -4; //screen clipper location
@@ -941,7 +938,6 @@ CONST
 GLOBAL
     byte pal[ 255 ]; //palette to destroy 255 gets 000 to 255; if 000 put in
     int drawloc; //fore screen draw location
-    int drawloc2; //background screen draw location
     int sm_block_grf;
     int bg_block_grf;
     int noscrolldraw; //to not scroll the first screen or after a extend or for/after a treasure room
@@ -959,9 +955,6 @@ GLOBAL
     int do_bgrounds; //do graphics on the background? - options can set to have none
     int do_levels; //which to run normal or Extended
     int Start_lives; //Lives player starts with
-    int default_song; //default song mod to play
-    double song_pos; //for restarting the song mod
-    int current_song_id;
     //timers
     int level_timer; //in seconds the level has been going for
     int level_timer2; //seconds for a the bubble delays
@@ -976,7 +969,6 @@ GLOBAL
     int level_advance; //number to advance by 1 or 3=orange, 5=red, 7=purple, gold = to level 70
     int start_level; //level the game starts at
     int next_insert; //insert coint animation level to run animation next, so it doesnt appear every level
-    int level_next_go; //do advance to next level now
     int level_stop_what; //everything, clock=nasties, heart nasties blue
     int dest_level; //level to goto, used by screen draw and to check for ingame bosses
     int level_type; //what level? normal,boss,secret room, potion
@@ -1033,7 +1025,6 @@ GLOBAL
     int pl_died_skhurry; //this to get rid of skel and hurry straight away
     int scrollcount; //used to scroll the screen, by one screen length once its drawn
     int scrollspeed; //speed to do scroll at
-    int lastdrawloc; //for doing the water flood, gets the last scroll draw location when the screen is draw
     //Recording of the players movements
     int stop_recording;
     //File pointers
@@ -1110,9 +1101,6 @@ GLOBAL
     int do_sound; //T/F - turn sound process on or off
     int m_selector; //effects, music, song
     int do_music; //true false
-// jjp    int do_song; //1 bubble mod, 2 remix
-// jjp    int id_song; //current song id
-// jjp    int song_ids[ 1 ]; //song ids 2 of
     int stop_sounds; //music, effects, all
     //potions
     int plr1_score;
@@ -1214,7 +1202,7 @@ GLOBAL
         effect21, effect22, effect23, effect24, effect25, effect26, effect27, effect28, effect29, effect30,
         effect31, effect32, effect33, effect34, effect35, effect36, effect37, effect38, effect39, effect40,
         effect41, effect42, effect43, effect44, effect45, effect46, effect47, effect48;
-    string song_files[ n_mod - 1 ] = mod1, mod2;
+
     //multi score;
     int multi_score[ 6 ] = 1000, 2000, 4000, 8000, 16000, 32000, 64000;
     //for popping trap bubbles and walking into enemies with a heart
@@ -2238,7 +2226,6 @@ DECLARE PROCESS Extend_Star( double x, y, int id2 );
 DECLARE PROCESS Pro_Angle( double x, y, int id2 );
 DECLARE PROCESS Extend_bubble( xloc, yloc, bub_number );
 DECLARE PROCESS Twinkle( xloc, yloc, an_start );
-DECLARE PROCESS Topborder(); 
 DECLARE PROCESS Hiscore_Cheats( hi_loc );
 DECLARE PROCESS Check_Score();
 DECLARE PROCESS Dis_Non_Enter_Score();
@@ -2288,9 +2275,9 @@ BEGIN
     sprites = fpg_load( sprfloc ); //sprite data
     fooditems = fpg_load( sprfloc2 ); //Items food graphics
     titlesfile = fpg_load( sprfloc3 ); //Title screen graphics
-    //Load Bubble Bobble Pallette
-// jjp    Load_Pal( palfloc );
+
     Load_Sounds(); //load all the Wavs and Songs
+
     //load fonts
     font_s = fnt_load( silverfnt ); //silver font load
     font_r = fnt_load( redfnt ); //red font load
@@ -2302,12 +2289,15 @@ BEGIN
     font_pb = fnt_load( B_potfnt );
     font_lev = fnt_load( levfnt ); //level reached font
     font_ed = fnt_load( editfnt ); //Editor font - Options Screen
+
     glyph_set(font_s,32,0,map_new(5,14)); // Fix char 32 width
     glyph_set(font_r,32,0,map_new(5,14)); // Fix char 32 width
     glyph_set(font_b,32,0,map_new(5,14)); // Fix char 32 width
     glyph_set(font_g,32,0,map_new(5,14)); // Fix char 32 width
     glyph_set(font_gr,32,0,map_new(5,14)); // Fix char 32 width
+
     Setupchars(); //High score chars setup
+
     //Load game data
     Load( game_h, hs_table ); //Load HiScore Table, Level Reached, Level Max
     Load( game_c, spec_Items ); //Load Game Counters
@@ -2346,7 +2336,6 @@ BEGIN
     //    cheat_mode = TRUE;
     do_sound = TRUE; //Turns sound process on and off in the options screen - uses signal sleep
     do_music = TRUE; //do music on game
-    default_song = song2; //default song
     IF ( !key( _s ) ) //For no sound card computers
         Sound_process(); //processes the sound triggers playing songs or wavs also stopping them
     END
@@ -2358,7 +2347,7 @@ BEGIN
     Test_Info(); //Test debug counters
     Main_Logic(); //Do Start game titles animation
     LOOP
-        IF ( tscreen_adv /* jjp == TRUE */ )
+        IF ( tscreen_adv )
             IF ( Titles_Nextscreen[ cur_tscreen ] == t_next )
                 cur_tscreen++; //main screens loop
             ELSE
@@ -2430,7 +2419,7 @@ PRIVATE
     int n_anim;
     int a_del;
 BEGIN
-#if 0 // jjp
+#if 1 // jjp
 signal( type P_Anim, s_kill );
 tscreen_adv = TRUE;
 s_trigger[ e_life ] = TRUE;
@@ -2482,7 +2471,7 @@ return;
     //Presents animation
     Presents();
     LOOP
-        IF ( ani_finish /* jjp == TRUE */ )
+        IF ( ani_finish )
             BREAK;
         END
         FRAME;
@@ -2501,7 +2490,7 @@ return;
     END
     Auto_adv_kill( 2 );
     LOOP
-        IF ( kill /* jjp == TRUE */ )
+        IF ( kill )
             BREAK;
         END
         FRAME;
@@ -2748,7 +2737,7 @@ BEGIN
     //stop all the sprites
     level_stop_what = stop_everything;
     //Wait until space is pressed
-    LOOP
+    REPEAT
         d_time++;
         IF ( d_time > 10 )
             write_delete( pause_id );
@@ -2766,11 +2755,8 @@ BEGIN
                 END
             END
         END
-        IF ( key( _space ))
-            BREAK;
-        END
         FRAME;
-    END
+    UNTIL ( kill )
     write_delete( pause_id );
     //restore timers
     timer[ 3 ] = time_3;
@@ -2903,7 +2889,7 @@ BEGIN
             END
         END //Switch
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ OR level_next != 0 OR game_state == gs_adv_level )
+    UNTIL ( kill OR level_next != 0 OR game_state == gs_adv_level )
 END
 
 //Resets the HiScore Table, level Reached and Hiscore
@@ -2983,7 +2969,7 @@ BEGIN
                         keys_pressed[ plr ].pl_fire = FALSE;
                         bubbob[ plr ].bubrel = TRUE;
                     END
-                    IF ( bubbob[ plr ].bubrel /* jjp == TRUE */ AND keys_pressed[ plr ].pl_fire /* jjp == TRUE */ )
+                    IF ( bubbob[ plr ].bubrel AND keys_pressed[ plr ].pl_fire )
                         bubbob[ plr ].bubkey = TRUE;
                         bubbob[ plr ].bubrel = FALSE;
                     END
@@ -3034,7 +3020,7 @@ BEGIN
                             keys_pressed[ plr ].pl_fire = FALSE;
                             bubbob[ plr ].bubrel = TRUE;
                         END
-                        IF ( bubbob[ plr ].bubrel /* jjp == TRUE */ AND keys_pressed[ plr ].pl_fire /* jjp == TRUE */ )
+                        IF ( bubbob[ plr ].bubrel AND keys_pressed[ plr ].pl_fire )
                             bubbob[ plr ].bubkey = TRUE;
                             bubbob[ plr ].bubrel = FALSE;
                         END
@@ -3071,7 +3057,7 @@ BEGIN
                     player_st2 = TRUE;
                 END
                 //Start the game
-                IF ( player_st1 /* jjp == TRUE */ OR player_st2 /* jjp == TRUE */ )
+                IF ( player_st1 OR player_st2 )
                     cur_tscreen = t_start_game;
                     Main_logic();
                 END
@@ -3108,21 +3094,26 @@ BEGIN
                     Credits--; //Use Up a coin
                     Player_join_game( 1 );
                 END
-                IF ( key_down( _5 ))
-                    bubble_trans = NOT bubble_trans;
-                END
                 IF ( key_down( _F8 ))
-                    Pause_Game();
+                    int pause_id = get_id( type Pause_Game );
+                    if ( !pause_id )
+                        Pause_Game();
+                    else
+                        pause_id.kill = 1;
+                    end
+                END
+                IF ( key_down( _F5 ))
+                    bubble_trans = !bubble_trans;
                 END
                 //Get item cheat
-                IF ( key_down( _F10 ) AND item_key /* jjp == TRUE */ )
+                IF ( key_down( _F10 ) AND item_key )
                     Cheat_Key_F10();
                 END
             END
             //Music
-            IF ( do_sound /* jjp == TRUE */ )
+            IF ( do_sound )
                 IF ( key_down( _f1 ))
-                    IF ( do_music /* jjp == TRUE */ )
+                    IF ( do_music )
                         do_music = FALSE;
                         Music_End();
                     ELSE
@@ -3130,44 +3121,6 @@ BEGIN
                         Music_start();
                     END
                 END
-                //Song On/Off
-                IF ( key_down( _f2 ))
-                    IF ( do_music /* jjp == TRUE */ )
-                        Music_End();
-                    END
-/*
-                    do_music = FALSE;
-                    IF ( do_song != 0 )
-                        music_stop();
-                        do_song = 0;
-                    ELSE
-                        do_song = default_song;
-                        Song_start();
-                    END
-*/
-                END //F2
-                //song select
-#if 0   // jjp
-                IF ( key_down( _f3 ))
-                    IF ( do_music /* jjp == TRUE */ )
-                        Music_End();
-                    END
-                    do_music = FALSE;
-                    IF ( music_is_playing() )
-                        Music_End();
-                    END
-                    IF ( do_song == song1 ) //swap to other song module
-                        do_song = song2;
-                        default_song = song2; //for when user stops it then selects play song
-                    ELSE
-                        do_song = song1;
-                        default_song = song1; //for when user stops it then selects play song
-                    END
-                    //play the song
-                    id_song = song_ids[ do_song -1 ];
-                    current_song_id = music_play( song_ids[ do_song -1 ], -1 );
-                END //f3
-#endif
             END //Sound On
 //        END //timer delay
         FRAME;
@@ -3187,38 +3140,8 @@ BEGIN
     FOR ( scount = n_effects + 1; scount < n_sounds; scount++ )
         sound_ids[ scount ] = sound_load( effect_files[ scount ] ); //load with no loop on sound effects
     END
-
-#if 0
-    //load songs
-    song_ids[ 0 ] = music_load( song_files[ 0 ] );
-    song_ids[ 1 ] = music_load( song_files[ 1 ] );
-    //start song if selected
-    IF ( do_song != 0 )
-        id_song = song_ids[ do_song - 1 ];
-        current_song_id = music_play( song_ids[ do_song - 1 ], -1 );
-    END
-#endif
 END
 
-
-#if 0
-/* Mod sound */
-
-PROCESS Song_Start()
-BEGIN
-    IF ( !music_is_playing() )
-        music_play(id_song, -1);
-    END
-END
-
-PROCESS Song_Stop()
-BEGIN
-    do_song = 0;
-    IF ( music_is_playing() )
-        music_stop();
-    END
-END
-#endif
 
 /* Sound as music */
 
@@ -3279,7 +3202,7 @@ PRIVATE
     int lcount;
 BEGIN
     REPEAT
-        IF ( s_trigger[ scount ] /* jjp == TRUE */ ) //triggers for the effects
+        IF ( s_trigger[ scount ] ) //triggers for the effects
             s_trigger[ scount ] = FALSE; //clear sound trigger or sound will play loads of times
         END
         scount++;
@@ -3325,7 +3248,7 @@ BEGIN
                 effect_id = effects[ cur_eff ].onstop_effect;
                 eff_channel = using_channel[ search_pri ]; //get effect id playing
                 // Check for stop effect trigger - Trigger new Sound if this one is set to stop
-                IF ( effects[ cur_eff ].stop_effect /* jjp == TRUE */ )
+                IF ( effects[ cur_eff ].stop_effect )
                     s_trigger[ effect_id ] = TRUE; //Trigger new sound
                     effects[ cur_eff ].stop_effect = FALSE;
                     IF ( sound_is_playing( eff_channel ) /*AND eff_channel != 0*/ ) //Stop the sound playing
@@ -3337,52 +3260,27 @@ BEGIN
             //then do new sound now it has stopped
             IF ( eff_channel != 0 AND !sound_is_playing( eff_channel ) AND effect_id != e_none )
                 m_off_do_sound = effects[ effect_id ].music_off; //do_new sound when music is off
-#if 0   // jjp
-                //SONG
-                IF ( do_song != 0 )
+                IF ( do_music ) //doing music?
                     s_trigger[ effect_id ] = TRUE; //trigger all new effects
-                    IF ( effect_id <= e_fast )
-                        IF ( !music_is_playing() )
-                            current_song_id = music_play( id_song );
-                            music_set_playback_position( song_pos );
-                        END
-                        doing_effect[ search_pri ] = effect_id;
-                        s_trigger[ effect_id ] = FALSE; //Clear as will play normal music
-                    ELSE
-                        //e_skel, e_hurry, e_extend, e_extend2, e_potion, e_sroom:
-                        s_trigger[ effect_id ] = TRUE; //trigger all new effects
-                        IF ( stop_sounds >= stop_music ) //stop music, stop all
-                            IF ( music_is_playing() )
-                                song_pos = music_get_playback_position(current_song_id); //for restarting the music
-                                music_stop();
-                            END
-                        END
-                    END
                 ELSE
-#endif
-                    IF ( do_music /* jjp == TRUE */ ) //doing music?
-                        s_trigger[ effect_id ] = TRUE; //trigger all new effects
+                    IF ( m_off_do_sound == Yes ) //Ok to do the effect
+                        s_trigger[ effect_id ] = TRUE; //Trigger new effect
                     ELSE
-                        IF ( m_off_do_sound == Yes ) //Ok to do the effect
-                            s_trigger[ effect_id ] = TRUE; //Trigger new effect
-                        ELSE
-                            s_trigger[ effect_id ] = FALSE; //Clear Trigger effect - norm, fast, secret, potion etc
-                        END
+                        s_trigger[ effect_id ] = FALSE; //Clear Trigger effect - norm, fast, secret, potion etc
                     END
                 END
-#if 0
-            END //Sound not playing trigger new one on finished
-#endif
+            END
+
             //    search_pri = effects[scount].priority;
             REPEAT //One channel loop
                 search_pri = effects[ scount ].priority;
                 //Check Sound Trigger for new musical effect or music
-                IF ( s_trigger[ scount ] /* jjp == TRUE */ )
+                IF ( s_trigger[ scount ] )
                     //Check music on, or music false and music_off overide set for this sound
-#if 0   // jjp
-                    //SONG
-                    IF ( do_song != 0 )
-                        //effects[scount].do_song_eff == Yes)
+                    //MUSIC
+                    ///*
+                    IF (( do_music ) OR
+                        ( do_music == FALSE AND effects[ scount ].music_off == Yes ))
                         //Stop music/effects
                         doing_effect[ search_pri ] = scount; //new effect number
                         s_trigger[ scount ] = FALSE; //clear trigger for this effect
@@ -3396,82 +3294,25 @@ BEGIN
                                 END
                             END
                         END
-                        IF ( stop_sounds >= stop_music AND effects[ scount ].do_song_eff == Yes )
-                            IF ( music_is_playing() )
-                                song_pos = music_get_playback_position( current_song_id ); //for restarting the music
-                                music_stop();
-                            END
-                        END
                         //If a sound is playing, Stop the sound using this sound channel
                         IF ( sound_is_playing( eff_channel ) /*AND eff_channel != 0*/ )
                             sound_stop( eff_channel );
                         END
-                        IF ( effects[ scount ].do_song_eff == No )
-                            IF ( !music_is_playing() )
-                                current_song_id = music_play( id_song, -1 );
-                                music_set_playback_position( song_pos );
+                        if ( sound_is_playing( using_channel[ cur_pri ] ) )
+                            sound_stop( using_channel[ cur_pri ] );
+                        end
+                        //Play sound
+                        SWITCH ( scount ) //check current sound number
+                            CASE e_firesph, e_lning2, e_explos: //different pitches for these samples
+                                using_channel[ cur_pri ] = sound_play( sound_ids[ scount ], ( scount < n_effects + 1 AND effects[ scount ].loop_wav ) ? -1 : 0 ); // , 256, rand( 200, 256 ));
                             END
-                            doing_effect[ search_pri ] = effect_id;
-                            s_trigger[ scount ] = FALSE; //Clear Trigger effect - norm, fast, secret, potion etc
-                        ELSE
-                            //END
-                            //Play sound
-                            if ( sound_is_playing( using_channel[ cur_pri ] ) )
-                                sound_stop( using_channel[ cur_pri ] );
-                            end
-
-                            SWITCH ( scount ) //check current sound number
-                                CASE e_firesph, e_lning2, e_explos: //different pitches for these samples
-                                    using_channel[ cur_pri ] = sound_play( sound_ids[ scount ], ( scount < n_effects + 1 AND effects[ scount ].loop_wav ) ? -1 : 0 ); // , 256, rand( 200, 256 ));
-                                END
-                                DEFAULT: //play at normal pitch
-                                    using_channel[ cur_pri ] = sound_play( sound_ids[ scount ], ( scount < n_effects + 1 AND effects[ scount ].loop_wav ) ? -1 : 0 );
-                                END
+                            DEFAULT: //play at normal pitch
+                                using_channel[ cur_pri ] = sound_play( sound_ids[ scount ], ( scount < n_effects + 1 AND effects[ scount ].loop_wav ) ? -1 : 0 );
                             END
-                            num_left--; //number of channels left - 1
                         END
-                        //END //Check Sound Trigger - SONG
-                    ELSE
-#endif
-                        //MUSIC
-                        ///*
-                        IF (( do_music /* jjp == TRUE */ ) OR
-                            ( do_music == FALSE AND effects[ scount ].music_off == Yes ))
-                            //Stop music/effects
-                            doing_effect[ search_pri ] = scount; //new effect number
-                            s_trigger[ scount ] = FALSE; //clear trigger for this effect
-                            cur_eff = scount;
-                            //Stop all sounds?
-                            stop_sounds = effects[ cur_eff ].stop_what;
-                            IF ( stop_sounds == stop_all )
-                                FOR ( lcount = 16; lcount < 31; lcount++ )
-                                    IF ( sound_is_playing( lcount ) )
-                                        sound_stop( lcount );
-                                    END
-                                END
-                            END
-                            //If a sound is playing, Stop the sound using this sound channel
-                            IF ( sound_is_playing( eff_channel ) /*AND eff_channel != 0*/ )
-                                sound_stop( eff_channel );
-                            END
-                            if ( sound_is_playing( using_channel[ cur_pri ] ) )
-                                sound_stop( using_channel[ cur_pri ] );
-                            end
-                            //Play sound
-                            SWITCH ( scount ) //check current sound number
-                                CASE e_firesph, e_lning2, e_explos: //different pitches for these samples
-                                    using_channel[ cur_pri ] = sound_play( sound_ids[ scount ], ( scount < n_effects + 1 AND effects[ scount ].loop_wav ) ? -1 : 0 ); // , 256, rand( 200, 256 ));
-                                END
-                                DEFAULT: //play at normal pitch
-                                    using_channel[ cur_pri ] = sound_play( sound_ids[ scount ], ( scount < n_effects + 1 AND effects[ scount ].loop_wav ) ? -1 : 0 );
-                                END
-                            END
-                            num_left--; //number of channels left - 1
-                        END //Check Sound Trigger - Music
-                        //*/    END
-#if 0   // jjp
-                    END
-#endif
+                        num_left--; //number of channels left - 1
+                    END //Check Sound Trigger - Music
+                    //*/    END
                 END //Check music on, or music false and music_off overide set for this sound
                 scount++; //increase index count
                 //will quit the loop once weve hit next effectchan/priority
@@ -3483,7 +3324,7 @@ BEGIN
         scount = e_life;
         //Rest of Sounds
         REPEAT
-            IF ( s_trigger[ scount ] /* jjp == TRUE */ ) //triggers for the effects
+            IF ( s_trigger[ scount ] ) //triggers for the effects
                 SWITCH ( scount ) //check current sound number
                     CASE e_rock, e_lning1, e_laser, e_Bothit, e_Boing:
                         sound_play( sound_ids[ scount ], ( scount < n_effects + 1 AND effects[ scount ].loop_wav ) ? -1 : 0 ); // , 200, rand( 200, 256 )); //different pitches for these samples
@@ -3505,18 +3346,20 @@ END
 PROCESS Init_Game()
 BEGIN
     //Scroll Plane Start - screen display area of 480x448
-    region_define( 1, 60, 0, 518, 464 ); //scrolling play area region definition Region = 1
+    region_define( 1, 60, 48, 518, 416 ); //scrolling play area region definition Region = 1
     scroll_start( 0, blocksfile, scr_graf, scr_bgrd, 1, 10 ); //set up the games scrollplace (Vert Circular 2 screens)
 
     scroll.x0=0;
-    scroll.y0=0;
+    scroll.y0=48;
     scroll.x1=0;
-    scroll.y1=-464;
+    scroll.y1=48;
     scroll.z=512;
     scroll.camera=0;
-    scroll.ratio=0.0;
+    scroll.ratio=100.0;
     scroll.speed=0;
     scroll.follow=-1;
+    scroll.region1=1;
+    scroll.region2=1;
 
     //done later as we want the scrollplane to be refreshed first
 
@@ -3555,7 +3398,6 @@ BEGIN
     bubbob[ 1 ].score = 0;
     Game_difficulty(); //set game difficulty
     players_on_screen = 0; //number of players on screen
-    level_next_go = FALSE; //initialise advance level
     noscrolldraw = TRUE; //draws the screen in one go - for extend and secret room
     //****START LEVEL*****
     cur_level = start_level; //draw screen level counter
@@ -3566,8 +3408,7 @@ BEGIN
         scroll.y0 += 464;
         scroll.y1 += 464;
     END
-    drawloc2 = 80; //Background starts at the same place
-    song_pos = 0;
+
     Clr_collected( 0 ); // Clear extended letters
     Clr_collected( 1 );
 
@@ -3579,6 +3420,7 @@ BEGIN
     level_type = lv_normal; //Normal level
     ///*
     //Games intro animation
+#if 0 // jjp
     intro_finished = FALSE; //made true by the intro process when it finishes
     Do_Intro_Screen(); //the amount of players currently starting the game will be checked with "players_joining"
     //when a player presses the start button it will be checked with the above procedure
@@ -3592,7 +3434,8 @@ BEGIN
             player_st2 = TRUE;
         END
         FRAME;
-    UNTIL ( intro_finished /* jjp == TRUE */ ) //its finished with the start animation (clear bubbles dinos etc)
+    UNTIL ( intro_finished ) //its finished with the start animation (clear bubbles dinos etc)
+#endif
     //*/
     //  Test_Info();
 
@@ -3602,10 +3445,10 @@ BEGIN
     Fade_on(200); //fade the screen ON
     FRAME;
     game_state = gs_start_adv_level;
-    IF ( player_st1 /* jjp == TRUE */ )
+    IF ( player_st1 )
         Player_Join_Game( 0 );
     END
-    IF ( player_st2 /* jjp == TRUE */ )
+    IF ( player_st2 )
         Player_Join_Game( 1 );
     END
     player_st1 = FALSE;
@@ -3767,11 +3610,11 @@ PRIVATE
     int x_loc;
     int y_loc;
 BEGIN
+    scroll_stop( 0 );
+    frame;
     Write( font_g, ret_xtext( 16 ), ret_ytext( 3 ), 4, "@@@ GAME KEYS INFORMATION@@@" );
     x_loc = ret_xtext( 3 );
     y_loc = ret_ytext( 5 );
-    scroll_stop( 0 );
-    FRAME;
     Write( font_ed, x_loc, y_loc, 3, "Title Screen Keys" );
     y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "1    1  Player Start" );
@@ -3796,14 +3639,16 @@ BEGIN
     Write( font_ed, x_loc, y_loc, 3, "Esc  Quit Game" );
     y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "F1   Music On/Off" );
+/*
     y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "F2   Song On/Off" );
     y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "F3   Choose Song" );
+*/
     y_loc += 32;
-    Write( font_ed, x_loc, y_loc, 3, "F8   Pause Game/Space Restart" );
+    Write( font_ed, x_loc, y_loc, 3, "F5   Translucent Bubbles" );
     y_loc += 32;
-    Write( font_ed, x_loc, y_loc, 3, "5    Translucent Bubbles" );
+    Write( font_ed, x_loc, y_loc, 3, "F8   Pause/Unpause Game" );
     y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "See Redefine Keys for Player 1's and 2's Keys" );
     Fade_on(200);
@@ -3929,7 +3774,7 @@ BEGIN
                 joy_disJF2_id[ 3 ] = Write( font_s, ret_xtext( 25 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 1 ]] );
             END
         END
-        IF ( pl1_new /* jjp == TRUE */ )
+        IF ( pl1_new )
             pl1_new = FALSE; //update pl1 to false
             write_delete( kj_dis1_id );
             IF ( player_keys_joy[ 0 ] == Use_Keys )
@@ -3948,7 +3793,7 @@ BEGIN
                 joy_disJF1_id[ 3 ] = Write( font_s, ret_xtext( 8 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 0 ]] );
             END
         END
-        IF ( pl2_new /* jjp == TRUE */ )
+        IF ( pl2_new )
             pl2_new = FALSE; //update pl2 to false
             write_delete( kj_dis2_id );
             IF ( player_keys_joy[ 1 ] == Use_Keys )
@@ -4004,12 +3849,12 @@ BEGIN
     level_type = lv_cheat;
     Mouse_Pointer();
     //invincible
-    IF ( bubbob[ 0 ].invincible /* jjp == TRUE */ )
+    IF ( bubbob[ 0 ].invincible )
         Button_Tog( 20, TRUE );
     ELSE
         Button_Tog( 20, FALSE );
     END
-    IF ( bubbob[ 1 ].invincible /* jjp == TRUE */ )
+    IF ( bubbob[ 1 ].invincible )
         Button_Tog( 21, TRUE );
     ELSE
         Button_Tog( 21, FALSE );
@@ -4119,7 +3964,7 @@ BEGIN
     FOR ( b_loop = 0; b_loop <= 14; b_loop++ )
         Button_norm( b_loop );
     END
-    IF ( cheat_mode /* jjp == TRUE */ )
+    IF ( cheat_mode )
         FOR ( b_loop = 15; b_loop <= 19; b_loop++ )
             Button_norm( b_loop );
         END
@@ -4151,10 +3996,10 @@ BEGIN
     Write( font_ed, ret_xtext( 3 ), ret_ytext( 18 ), 3, "Reset Player Keys" );
     Write( font_ed, ret_xtext( 3 ), ret_ytext( 19 ), 3, "Reset Everything to Defaults" );
     Write( font_ed, ret_xtext( 3 ), ret_ytext( 20 ), 3, "Clear Cheats" );
-    IF ( cheat_mode /* jjp == TRUE */ )
+    IF ( cheat_mode )
         Write( font_ed, ret_xtext( 3 ), ret_ytext( 21 ), 3, "Cheat Screen" );
     END
-    IF ( do_bgrounds /* jjp == TRUE */ ) //graphics behind the screen on scroll plane 2
+    IF ( do_bgrounds ) //graphics behind the screen on scroll plane 2
         beh_ids[ 0 ] = Write( font_ed, ret_xtext( 8 ) + 8, ret_ytext( 5 ), 3, "On" );
     ELSE
         beh_ids[ 0 ] = Write( font_ed, ret_xtext( 8 ) + 8, ret_ytext( 5 ), 3, "Off" );
@@ -4164,7 +4009,7 @@ BEGIN
     ELSE
         beh_ids[ 1 ] = Write( font_ed, ret_xtext( 8 ) -8, ret_ytext( 8 ), 3, "New Levels" );
     END
-    IF ( do_sound /* jjp == TRUE */ ) //Sound Process On/Off (sleep/awake)
+    IF ( do_sound ) //Sound Process On/Off (sleep/awake)
         beh_ids[ 2 ] = Write( font_ed, ret_xtext( 6 ), ret_ytext( 10 ), 3, "On" );
     ELSE
         beh_ids[ 2 ] = Write( font_ed, ret_xtext( 6 ), ret_ytext( 10 ), 3, "Off" );
@@ -4231,7 +4076,7 @@ BEGIN
         Text_id1 = Write( font_s, ret_xtext( 0 ), ret_ytext( 16 ), 3, "PRESS  1 OR 2  TO  REDEFINE  KEYS  (ESC MENU)" );
         LOOP
             IF ( Key( _esc ))
-                IF ( keys_changed /* jjp == TRUE */ ) //will prompt the user if they wish to save these keys to use again
+                IF ( keys_changed ) //will prompt the user if they wish to save these keys to use again
                     Write( font_g, ret_xtext( 0 ), ret_ytext( 16 ), 3, "YOUR PLAYER KEYS HAVE BEEN CHANGED" );
                     Write( font_g, ret_xtext( 0 ), ret_ytext( 17 ), 3, "SAVE TO DISC Y/N  ?" );
                     REPEAT
@@ -4354,9 +4199,9 @@ BEGIN
                 END
                 FRAME;
             END
-        UNTIL ( exit_enter /* jjp == TRUE */ ) //Exit enter keys loop
+        UNTIL ( exit_enter ) //Exit enter keys loop
         write_delete( text_id4 ); //Keys ok?
-        IF ( accept_keys /* jjp == TRUE */ )
+        IF ( accept_keys )
             Store_Keys( plr );
             keys_changed = TRUE; //will prompt the user if they wish to save these keys to use again
         ELSE
@@ -4546,7 +4391,7 @@ BEGIN
     Changing_Titles();
     Scroll_Bubbles();
     LOOP
-        IF ( titles_timer >= 5 /*21*/ ) //21 Title changing text going to loop
+        IF ( titles_timer >= 21 ) //21 Title changing text going to loop
             //IF (titles_timer >= 5) //21 Title changing text going to loop
             //tscreen_adv = TRUE;
             Fade_off(200);
@@ -4619,7 +4464,7 @@ BEGIN
                 IF ( Game_Text[ cur_t_id ].txt_linefeed == FALSE )
                     BREAK;
                 END
-                IF ( Game_Text[ cur_t_id ].txt_linefeed /* jjp == TRUE */ )
+                IF ( Game_Text[ cur_t_id ].txt_linefeed )
                     cur_t_id++; //Update Current title to point to the next to display
                 END
             END
@@ -4772,7 +4617,7 @@ BEGIN
         IF ( flash_count > 20 )
             flash_count = 0;
             arr_pos = st_arr; //get start position
-            IF ( dis_text /* jjp == TRUE */ )
+            IF ( dis_text )
                 REPEAT
                     //move text back to on screen
                     write_move( Text_On_Scr[ arr_pos ].Text_Id, Text_On_Scr[ arr_pos ].txt_x, Text_On_Scr[ arr_pos ].txt_y );
@@ -4862,8 +4707,8 @@ BEGIN
         ELSE
             txt_loc++;
         END
-    UNTIL ( txt_found /* jjp == TRUE */ OR txt_loc > txt_onscr )
-    IF ( txt_found /* jjp == TRUE */ ) //found the text delete it
+    UNTIL ( txt_found OR txt_loc > txt_onscr )
+    IF ( txt_found ) //found the text delete it
         LOOP
             write_delete( Text_on_Scr[ txt_loc ].Text_Id ); //delete one line
             del_n_lines++; //how many lines deleted
@@ -4906,7 +4751,7 @@ BEGIN
         ELSE
             exit_cpy = TRUE; //shifted all information up
         END
-    UNTIL ( exit_cpy /* jjp == TRUE */ )
+    UNTIL ( exit_cpy )
     //update how many in the array
     txt_onscr = 0;
     REPEAT
@@ -4940,23 +4785,25 @@ PRIVATE
     int l_off; //lines to take off the screen starting from this position from Txt_on_off[]
 BEGIN
     Clear_Txt_array(); //clear text in display array
-    drawloc2 = 80;
+
     auto_loc1 = 0;
-    level_next_go = FALSE; //initialise advance level
     noscrolldraw = TRUE; //draws the screen in one go - for extend and secret room
     //Define Scroll plane and Region on screen
-    region_define( 1, 60, 0, 518, 464 ); //scrolling play area region definition Region = 1
+
+    region_define( 1, 60, 48, 518, 416 ); //scrolling play area region definition Region = 1
     scroll_start( 0, blocksfile, scr_graf, scr_bgrd, 1, 10 ); //set up the games scrollplace (Vert Circular 2 screens)
 
     scroll.x0=0;
-    scroll.y0=0;
+    scroll.y0=48;
     scroll.x1=0;
-    scroll.y1=-464;
+    scroll.y1=48;
     scroll.z=512;
     scroll.camera=0;
-    scroll.ratio=0.0;
+    scroll.ratio=100.0;
     scroll.speed=0;
     scroll.follow=-1;
+    scroll.region1=1;
+    scroll.region2=1;
 
     //   scroll.y0 += 2; //adjustment as main title's scrollplane messes this one up
     //   scroll.y1 += 1;
@@ -5003,7 +4850,7 @@ BEGIN
             Text_Writer( Txt_on_off[ txt_to_do ].Lines_On, t_norm );
             txt_to_do++;
         END
-        IF ( level_items /* jjp == TRUE */ AND txt_to_do == 4 )
+        IF ( level_items AND txt_to_do == 4 )
             Del_Scr_Text( l_off );
             l_off = Txt_on_off[ txt_to_do ].Lines_Off;
             Text_Writer( Txt_on_off[ txt_to_do ].Lines_On, t_norm );
@@ -5058,7 +4905,7 @@ BEGIN
             stop_recording = TRUE;
         END
         FRAME;
-    UNTIL ( stop_recording /* jjp == TRUE */ )
+    UNTIL ( stop_recording )
     test3 = tot_size;
     //   save (instr1, OFFSET autoplay1, test3*4);
     /*
@@ -5117,7 +4964,7 @@ BEGIN
             keys_pressed[ plr ].pl_fire = FALSE;
             bubbob[ plr ].bubrel = TRUE;
         END
-        IF ( bubbob[ plr ].bubrel /* jjp == TRUE */ AND keys_pressed[ plr ].pl_fire /* jjp == TRUE */ )
+        IF ( bubbob[ plr ].bubrel AND keys_pressed[ plr ].pl_fire )
             bubbob[ plr ].bubkey = TRUE;
             bubbob[ plr ].bubrel = FALSE;
         END
@@ -5179,7 +5026,7 @@ BEGIN
         //check for new key press to record
         FOR ( key_loop = 1; key_loop < no_key_moves; key_loop++ )
             //If the key is being pressed
-            IF ( keys[ key_loop ] /* jjp == TRUE */ )
+            IF ( keys[ key_loop ] )
                 IF ( key_rec[ key_loop ] == Rec_Free ) //key is not been recorded
                     IF ( plr == 0 )
                         autoplay1[ arr_pos ].arr_ind_loc = arr_pos; //for displaying on screen the array index number
@@ -5208,7 +5055,7 @@ BEGIN
         END //key loop
         test4 = arr_pos;
         FRAME;
-    UNTIL ( stop_recording /* jjp == TRUE */ OR arr_pos >= 1000 )
+    UNTIL ( stop_recording OR arr_pos >= 1000 )
     //Terminate all current recordings of keys and store these
     FOR ( key_loop = 1; key_loop < no_key_moves; key_loop++ )
         IF ( key_rec[ key_loop ] == Rec_Doing ) //clear finished recordings
@@ -5299,7 +5146,7 @@ BEGIN
     LOOP
         //Start the level
         IF ( game_state == gs_level_start )
-            IF ( bubbob[ 0 ].bubbled /* jjp == TRUE */ OR bubbob[ 1 ].bubbled /* jjp == TRUE */ )
+            IF ( bubbob[ 0 ].bubbled OR bubbob[ 1 ].bubbled )
                 timer[ 3 ] = 0;
                 timer[ 4 ] = 0; //seconds for a the bubble delays
             ELSE
@@ -5358,7 +5205,7 @@ BEGIN
                 item_num = 26;
                 Item( ret_adjustedx2( 61 ), ret_adjustedy2( 64 ), item_num );
             END
-            IF ( player_died /* jjp == TRUE */ )
+            IF ( player_died )
                 //load updated times for hurry from timers value at this time
                 act_hurry = level_timer + level_hurry;
                 act_skel = level_timer + level_skel;
@@ -5425,7 +5272,7 @@ BEGIN
     fade( 25, 25, 25, 25, 1000 );
     REPEAT
         FRAME;
-    UNTIL ( fade_info.fading == FALSE )
+    UNTIL ( !fade_info.fading )
 
     clear_screen();
     FRAME;
@@ -5601,7 +5448,7 @@ BEGIN
     ypos = y;
     size = 30;
     //Does Rainbow intro bubbles if cheat mode is on
-    IF ( cheat_mode /* jjp == TRUE */ )
+    IF ( cheat_mode )
         GRAPH = rand( rainbow_bubbles, rainbow_bubbles + 5 ); //rainbow intro bubble graphic
     ELSE
         GRAPH = intro_bubbles; //clear bubble
@@ -5636,7 +5483,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
 END
 
 //rotates the pallette
@@ -5662,7 +5509,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL (( !exists( father ) OR father.kill /* jjp == TRUE */ OR kill /* jjp == TRUE */ ) AND pal_rot_count == 0 ) //have to check for seconds then
+    UNTIL (( !exists( father ) OR father.kill OR kill ) AND pal_rot_count == 0 ) //have to check for seconds then
     //to see if the rotation has finishe
     if ( exists( father ) ) father.kill = TRUE; end //we are finshed rotating the palette and the timer has reached the correct time
     FRAME;
@@ -5760,7 +5607,7 @@ BEGIN
             bubbob[ plr_count ].special_fireball = 16; //set player to fireball
         END
     END
-    IF ( item_num != 999 AND got_bell /* jjp == TRUE */ ) //Do animation if there is a special item to be done
+    IF ( item_num != 999 AND got_bell ) //Do animation if there is a special item to be done
         // Bell item collected
         bell( 20 );
     END
@@ -5843,7 +5690,6 @@ BEGIN
     //Kill The keys
     signal( type Do_keys, s_kill );
     signal( type Game_loop, s_kill );
-    signal( type Topborder, s_kill );
     Put_Scroll_Text( 27 ); //put the scroll text to screen
     //Clear last moves from movement array
     FOR ( plr_loop = 0; plr_loop <= 1; plr_loop++ )
@@ -5893,10 +5739,10 @@ BEGIN
         FRAME;
     END
     game_state = gs_comp_dino_mv;
-    IF ( Player_alive( 0 ) /* jjp == TRUE */ )
+    IF ( Player_alive( 0 ) )
         bubbob[ 0 ].level_reached = 101;
     END
-    IF ( Player_alive( 1 ) /* jjp == TRUE */ )
+    IF ( Player_alive( 1 ) )
         bubbob[ 1 ].level_reached = 101;
     END
     //check that both dinos are alive
@@ -5992,7 +5838,7 @@ BEGIN
     fade( 0, 0, 0, 0, 500 );
     REPEAT
         FRAME;
-    UNTIL ( fade_info.fading == FALSE )
+    UNTIL ( !fade_info.fading )
     Do_keys();
     //Rest the game variables and advance to enter score screen
     Game_End_Reset();
@@ -6441,7 +6287,7 @@ BEGIN
                     game_state = gs_start_adv_level;
                     level_next = 0; //reset next level timer
                     level_advance = 1; //one level advance by one screen
-                    IF ( extra_items /* jjp == TRUE */ )
+                    IF ( extra_items )
                         IF ( lev_multi == FALSE ) //trap nasties item
                             missed_multi++;
                             IF ( missed_multi >= 3 ) //missed multi pop of 3 or more for 3 levels in a row
@@ -6457,7 +6303,7 @@ BEGIN
                     END
                 END
             END
-            IF (( level_timer == time_food OR( got_crystal_ball /* jjp == TRUE */ AND level_timer == 2 ))
+            IF (( level_timer == time_food OR( got_crystal_ball AND level_timer == 2 ))
                 AND level_food == FALSE )
                 level_food = TRUE; //food has been displayed on level
                 food_num = 1; //food to do on this level default to 1 incase of errors
@@ -6470,13 +6316,13 @@ BEGIN
                     IF ( act_level == 1 ) //actual level counter is level 1
                         food_num = RAND( 21, 38 );
                     ELSE
-                        IF ( last_skel /* jjp == TRUE */ )
+                        IF ( last_skel )
                             food_num = food_SHU_Last( 1 ); //1 = skel
                         ELSE
-                            IF ( last_hurry /* jjp == TRUE */ )
+                            IF ( last_hurry )
                                 food_num = food_SHU_Last( 2 ); //2 = hurry
                             ELSE
-                                IF ( last_umb /* jjp == TRUE */ )
+                                IF ( last_umb )
                                     food_num = food_SHU_Last( 3 ); //2 = umbrella
                                 ELSE
                                     IF ( players_on_screen == 1 ) //One Player game
@@ -6509,7 +6355,7 @@ BEGIN
             IF ( bubbob[ 1 ].score > Hi_score )
                 Hi_score = bubbob[ 1 ].score;
             END
-            IF (( level_timer == time_item OR( got_crystal_ball /* jjp == TRUE */ AND level_timer == 2 ))
+            IF (( level_timer == time_item OR( got_crystal_ball AND level_timer == 2 ))
                 AND level_items == FALSE AND level_next == 0 )
                 level_items = TRUE; //set item to has been displayed on level
                 //TEST RANDOM ITEM
@@ -6547,7 +6393,7 @@ BEGIN
                     END
                 END
             END
-            IF ( player_died /* jjp == TRUE */ )
+            IF ( player_died )
                 //load updated times for hurry from timers value at this time
                 act_hurry = level_timer + level_hurry;
                 act_skel = level_timer + level_skel;
@@ -6599,9 +6445,9 @@ BEGIN
         plr_alive2 = Player_Alive( 1 );
         //check 1 player alive
         //or both players to compare later
-        IF ( plr_alive1 /* jjp == TRUE */ )
+        IF ( plr_alive1 )
             score_match( 0 );
-            IF ( bubbob[ 0 ].scorematched /* jjp == TRUE */ )
+            IF ( bubbob[ 0 ].scorematched )
                 score1 = bubbob[ 0 ].matchind; //falling food number found
                 ff_sprid = score1; //save it to do falling food later
                 ffall_type = ffall_t_score1; //falling food type matched to others score
@@ -6609,9 +6455,9 @@ BEGIN
                 ffall_level = TRUE; //make the bubbles into falling items
             END
         END
-        IF ( plr_alive2 /* jjp == TRUE */ )
+        IF ( plr_alive2 )
             score_match( 1 );
-            IF ( bubbob[ 1 ].scorematched /* jjp == TRUE */ )
+            IF ( bubbob[ 1 ].scorematched )
                 score2 = bubbob[ 1 ].matchind; //falling food number found
                 ff_sprid = score2; //save it to do falling food later
                 ffall_type = ffall_t_score1; //falling food type matched to others score
@@ -6755,7 +6601,7 @@ BEGIN
             END
         END
     END
-    IF ( found_item /* jjp == TRUE */ ) //yes found a item to display
+    IF ( found_item ) //yes found a item to display
         RETURN ( last_id );
     ELSE
         RETURN ( 999 ); //not found send terminator
@@ -6884,7 +6730,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL ( y < y_up_stop OR pl_died_skhurry /* jjp == TRUE */ OR player_died /* jjp == TRUE */ OR game_state == gs_adv_level ) //until off the screen or player died
+    UNTIL ( y < y_up_stop OR pl_died_skhurry OR player_died OR game_state == gs_adv_level ) //until off the screen or player died
     IF ( baddie_what == mon_norm AND pl_died_skhurry == FALSE )
         baddie_what = mon_angry; //make angry only if normal and not blue
         s_trigger[ e_fast ] = TRUE;
@@ -6917,7 +6763,7 @@ BEGIN
             done_skel = TRUE; //flag to play sound effect
         END
     END
-    IF ( done_skel /* jjp == TRUE */ AND level_type != lv_secret ) // Sound Effect but not on a secret room
+    IF ( done_skel AND level_type != lv_secret ) // Sound Effect but not on a secret room
         s_trigger[ e_skel ] = TRUE;
     END
 END
@@ -7188,7 +7034,7 @@ BEGIN
                     BREAK;
                 END
             END
-        UNTIL ( sidehit /* jjp == TRUE */ )
+        UNTIL ( sidehit )
     END
 END
  //Drunk Bottle
@@ -7228,14 +7074,14 @@ BEGIN
     wh_dino--; //alter so it gets array position
     //Add End game Score to players
     REPEAT
-        IF ( dino_sc1 >= 0 AND alive_1 /* jjp == TRUE */ )
+        IF ( dino_sc1 >= 0 AND alive_1 )
             bubbob[ 0 ].score += 1000;
             IF ( bubbob[ 0 ].score > Hi_score )
                 Hi_score = bubbob[ 0 ].score;
             END
             dino_sc1--;
         END
-        IF ( dino_sc2 >= 0 AND alive_2 /* jjp == TRUE */ )
+        IF ( dino_sc2 >= 0 AND alive_2 )
             bubbob[ 1 ].score += 1000;
             IF ( bubbob[ 1 ].score > Hi_score )
                 Hi_score = bubbob[ 1 ].score;
@@ -7366,12 +7212,12 @@ BEGIN
                 END
             END
         END
-        IF ( flash_go /* jjp == TRUE */ )
+        IF ( flash_go )
             flash_count++;
         ELSE
             flash_count = 0;
         END
-        IF ( ( angry != mon_bossbubb AND last_health != boss_health ) OR ( flash_count >= 5 AND flash_go /* jjp == TRUE */ )) //to do the flash blue anim
+        IF ( ( angry != mon_bossbubb AND last_health != boss_health ) OR ( flash_count >= 5 AND flash_go )) //to do the flash blue anim
             IF ( flash_count > 8 )
                 flash_count = 0;
             END
@@ -7471,7 +7317,7 @@ BEGIN
                 ypos += ydmov;
             END
             //hit a platform Left Right then turn around
-            IF ( xstop /* jjp == TRUE */ )
+            IF ( xstop )
                 IF ( facing == Face_Left ) //face the other way
                     facing = Face_Right;
                 ELSE
@@ -7479,7 +7325,7 @@ BEGIN
                 END
             END
             //hit a platform above or below move the other way
-            IF ( ystop /* jjp == TRUE */ )
+            IF ( ystop )
                 IF ( goud == Face_Up ) //swap movement
                     goud = Face_Down;
                 ELSE
@@ -7507,7 +7353,7 @@ BEGIN
             END
         END
         //IF (key(_space)) BREAK; END
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
     IF ( id2 != 0 )
         Dino_Millions( id2 );
     END
@@ -7667,7 +7513,7 @@ BEGIN
         xmov = 0; //clear x y stop local variables
         xstop = FALSE;
         ydmov = 0;
-        IF ( moving /* jjp == TRUE */ )
+        IF ( moving )
             moved += monsterspeed; //amount moved
             IF ( moved > 112 ) //7 blocks * block res = 16
                 moving = FALSE;
@@ -7750,7 +7596,7 @@ BEGIN
         END
         FRAME;
         //skel disapear plr has died, baddies all killed
-    UNTIL ( id2 == 0 OR pl_died_skhurry /* jjp == TRUE */ OR game_state >= gs_level_completed );
+    UNTIL ( id2 == 0 OR pl_died_skhurry OR game_state >= gs_level_completed );
     IF ( level_type != lv_secret ) //disapear cloud but not on a scret room
         //disapear anim
         GRAPH = diefrme + 3;
@@ -7829,7 +7675,7 @@ BEGIN
             angry = baddie_what;
         END
         //When player is killed or heart ends set back to normal baddie
-        IF ( player_died /* jjp == TRUE */ OR heart_finished /* jjp == TRUE */ ) //Player died back to normal status
+        IF ( player_died OR heart_finished ) //Player died back to normal status
             angry = mon_norm;
         END
         IF ( lastangry != angry )
@@ -7877,7 +7723,7 @@ BEGIN
             IF ( jump == FALSE )
                 IF ( fall == 0 )
                     //jump up
-                    IF ( y > lastplr_y AND platabove /* jjp == TRUE */ )
+                    IF ( y > lastplr_y AND platabove )
                         gojump = 1; //jump up val
                         IF ( lastjmp_x == x AND lastjmp_y == y ) //read where last jumped from
                             jsamecount++;
@@ -7939,7 +7785,7 @@ BEGIN
                     FLAGS = 1;
                 END
             END
-            IF ( jump /* jjp == TRUE */ AND fall == 0 AND gojump != 0 AND jumpanim <= 0 AND level_stop_what == 0 )
+            IF ( jump AND fall == 0 AND gojump != 0 AND jumpanim <= 0 AND level_stop_what == 0 )
                 ydmov = vel / grav;
                 IF ( ydmov == 0 )
                     ydmov = 1;
@@ -7996,7 +7842,7 @@ BEGIN
         get_hard_col();
         //for jumping up to find player
         ex_plat_det();
-        IF ( fall == 0 AND gojump > 0 AND xstop /* jjp == TRUE */ AND new_jump == FALSE )
+        IF ( fall == 0 AND gojump > 0 AND xstop AND new_jump == FALSE )
             IF ( gojump == 2 ) //if jump across dont reverse way we are facing
                 gojump = 0;
                 fall = TRUE; //Fall down when spring thing hits a platform
@@ -8005,7 +7851,7 @@ BEGIN
             fall = TRUE;
             gojump = 0;
         END
-        IF ( fall == 0 AND xstop /* jjp == TRUE */ AND new_jump /* jjp == TRUE */ )
+        IF ( fall == 0 AND xstop AND new_jump )
             IF ( facing == Face_Left ) //face the other way
                 IF ( ylast == y )
                     reboundcount++;
@@ -8019,7 +7865,7 @@ BEGIN
             END
         END
         //clear the new jump var now we have started in a new direction
-        IF ( new_jump /* jjp == TRUE */ )
+        IF ( new_jump )
             new_jump = FALSE;
         END
         //for swapping anim graphic to face the other way
@@ -8145,7 +7991,7 @@ BEGIN
                 angry = baddie_what;
             END
             //When player is killed or heart ends set back to normal baddie
-            IF ( player_died /* jjp == TRUE */ OR heart_finished /* jjp == TRUE */ ) //Player died back to normal status
+            IF ( player_died OR heart_finished ) //Player died back to normal status
                 angry = mon_norm;
             END
             IF ( lastangry != angry )
@@ -8240,7 +8086,7 @@ BEGIN
             ypos += ydmov;
         END
         //hit a platform turn around
-        IF ( fall == 0 AND xstop /* jjp == TRUE */ )
+        IF ( fall == 0 AND xstop )
             IF ( golr == 1 ) //face the other way
                 golr = 2;
             ELSE
@@ -8358,7 +8204,7 @@ BEGIN
                 BREAK;
             END
         END
-    UNTIL ( ystop /* jjp == TRUE */ OR ypos > y_dn_block -80 )
+    UNTIL ( ystop OR ypos > y_dn_block -80 )
     //need to put in a die star
     animfrm = invaderstar;
     LOOP
@@ -8455,7 +8301,7 @@ BEGIN
                 angry = baddie_what;
             END
             //When player is killed or heart ends set back to normal baddie
-            IF ( player_died /* jjp == TRUE */ OR heart_finished /* jjp == TRUE */ ) //Player died back to normal status
+            IF ( player_died OR heart_finished ) //Player died back to normal status
                 angry = mon_norm;
             END
             IF ( lastangry != angry )
@@ -8513,7 +8359,7 @@ BEGIN
                         gojump = 2; //jump across
                     ELSE
                         //jump up
-                        IF ( y > lastplr_y AND platabove /* jjp == TRUE */ AND y MOD 16 <= 1 )
+                        IF ( y > lastplr_y AND platabove AND y MOD 16 <= 1 )
                             gojump = 1; //jump up val
                             //If jumped up more than the same place do a jump3
                             IF ( lastjmp_x == x AND lastjmp_y == y ) //read where last jumped from
@@ -8541,7 +8387,7 @@ BEGIN
             //check for jump key
             //checking for fall == false stops jumping in mid air
             //check for superdrunk cant jump when firing
-            //xinertia reused /* jjp == TRUE */ its firing
+            //xinertia reused its firing
             //Jump 1 = Jump Up
             //Jump 2 = Jump Across
             //Jump 3 = Jump 1/2 Across and Up
@@ -8584,7 +8430,7 @@ BEGIN
                 END
             END
             //Jump Movement
-            IF ( jump /* jjp == TRUE */ AND fall == 0 and gojump != 0 AND jumpanim <= 0 AND level_stop_what == 0 )
+            IF ( jump AND fall == 0 and gojump != 0 AND jumpanim <= 0 AND level_stop_what == 0 )
                 ydmov = vel / grav;
                 IF ( ydmov == 0 )
                     ydmov = 1;
@@ -8598,7 +8444,7 @@ BEGIN
                 END
             END
             //End of fall jump down movement
-            IF ( fall == 0 AND gojump == 0 AND xstop /* jjp == TRUE */ )
+            IF ( fall == 0 AND gojump == 0 AND xstop )
                 IF ( facing == Face_Left )
                     IF ( ylast == y )
                         reboundcount++;
@@ -8614,7 +8460,7 @@ BEGIN
                 END
             END
             //hit a platform turn around
-            IF ( gojump == 2 AND xstop /* jjp == TRUE */ ) //if jump across dont reverse way we are facing
+            IF ( gojump == 2 AND xstop ) //if jump across dont reverse way we are facing
                 gojump = 0;
                 jump = FALSE;
                 fall = TRUE;
@@ -8687,7 +8533,7 @@ BEGIN
         IF ( level_stop_what == 0 )
             xpos += xmov;
             //Can this player Fire a missle across the screen? if so fire one if player on this y plane
-            IF ( firespr /* jjp == TRUE */ AND xinertia == FALSE AND fall == 0 AND jump == false AND y == lastplr_y AND kill == 0 )
+            IF ( firespr AND xinertia == FALSE AND fall == 0 AND jump == false AND y == lastplr_y AND kill == 0 )
                 //call what missile to determine - rock, fireball, laser
                 whatmissle( id, x, y, facing, badid, man_speed );
             END
@@ -8879,7 +8725,7 @@ BEGIN
                 END
                 //left hit platforms then set destroy xstop = TRUE
                 IF ( xmov < 0 )
-                    IF ( ycolfind( xpos, ypos ) /* jjp == TRUE */ );
+                    IF ( ycolfind( xpos, ypos ) );
                         s_trigger[ e_bothit ] = TRUE;
                         xmov = -xmov;
                         angadd = -angadd;
@@ -8889,7 +8735,7 @@ BEGIN
                 END
                 //Right platforms
                 IF ( xmov > 0 )
-                    IF ( ycolfind( xpos + 31, ypos ) /* jjp == TRUE */ );
+                    IF ( ycolfind( xpos + 31, ypos ) );
                         s_trigger[ e_bothit ] = TRUE;
                         xmov = -xmov;
                         angadd = -angadd;
@@ -8914,7 +8760,7 @@ BEGIN
             IF ( ( level_type != lv_normal AND level_type != lv_demo ) OR game_state == gs_adv_level OR game_state == gs_level_anims ) // jjp revisar
                 RETURN;
             END
-        UNTIL ( ( ( rway == 1 AND x => xstart ) OR ( rway == 2 AND x =< xstart ) ) AND ( sidehit /* jjp == TRUE */ OR changedircount > 1 ) ) // jjp revisar
+        UNTIL ( ( ( rway == 1 AND x => xstart ) OR ( rway == 2 AND x =< xstart ) ) AND ( sidehit OR changedircount > 1 ) ) // jjp revisar
     END
     id2.yinertia = FALSE; //to let the normal baddie process
     id2.xinertia = FALSE; //know that it can throw another and move again
@@ -8972,13 +8818,13 @@ BEGIN
             IF ( level_stop_what != stop_everything )
                 //left hit platforms then set destroy xstop = TRUE
                 IF ( xmov < 0 )
-                    IF ( ycolfind( xpos, ypos - 8 ) /* jjp == TRUE */ );
+                    IF ( ycolfind( xpos, ypos - 8 ) );
                         xstop = TRUE;
                     END
                 END
                 //Right platforms
                 IF ( xmov > 0 )
-                    IF ( ycolfind( xpos + 31, ypos - 8 ) /* jjp == TRUE */ );
+                    IF ( ycolfind( xpos + 31, ypos - 8 ) );
                         xstop = TRUE;
                     END
                 END
@@ -8995,7 +8841,7 @@ BEGIN
                 IF ( id3 = collision( type man ))
                     IF ( id3.inv <= 0 ) //check to see if invunrable
                         id3.kill = Kill_D_FireInv;
-                        IF ( extra_items /* jjp == TRUE */ )
+                        IF ( extra_items )
                             spec_items[ 59 ].counter++; //Fire bubble
                         END
                         BREAK;
@@ -9010,7 +8856,7 @@ BEGIN
                 END
             END
             FRAME;
-        UNTIL ( xstop /* jjp == TRUE */ )
+        UNTIL ( xstop )
         //die fireball decrease to nothing in size
         GRAPH = fireball;
         animfrm = 100;
@@ -9072,7 +8918,9 @@ BEGIN
         END
         FRAME;
     END
-    id2.yinertia = FALSE;
+    if (exists(id2))
+        id2.yinertia = FALSE;
+    end
     REPEAT
         IF ( level_stop_what != stop_everything )
             xpos = ( x ); //adjustment as h map 1/2 size of screen
@@ -9085,13 +8933,13 @@ BEGIN
             //does side of screen as well
             //left hit platforms then set destroy xstop = TRUE
             IF ( xmov < 0 )
-                IF ( YColFind_Bad( xpos, ypos ) /* jjp == TRUE */ );
+                IF ( YColFind_Bad( xpos, ypos ) );
                     xstop = TRUE;
                 END
             END
             //Right platforms
             IF ( xmov > 0 )
-                IF ( YColFind_Bad( xpos + 31, ypos ) /* jjp == TRUE */ );
+                IF ( YColFind_Bad( xpos + 31, ypos ) );
                     xstop = TRUE;
                 END
             END
@@ -9105,11 +8953,11 @@ BEGIN
             END
         END
         //If nastie sprite died or level advance
-        IF (( id2.kill != 0 OR game_state == gs_adv_level OR game_state == gs_level_anims ) OR
+        IF (( !exists(id2) OR id2.kill != 0 OR game_state == gs_adv_level OR game_state == gs_level_anims ) OR
             ( level_type != lv_normal AND level_type != lv_demo ))
             RETURN;
         END
-    UNTIL ( xstop /* jjp == TRUE */ )
+    UNTIL ( xstop )
     animfrm = mighta_dis;
     animdel = 5;
     s_trigger[ e_rock ] = TRUE;
@@ -9126,7 +8974,9 @@ BEGIN
         END
         FRAME;
     END
-    id2.xinertia = FALSE; //Can throw another one when ready
+    if (exists(id2))
+        id2.xinertia = FALSE; //Can throw another one when ready
+    end
 END
  //The Rock
 
@@ -9196,7 +9046,7 @@ BEGIN
             END
         END
         //When player is killed or heart ends set back to normal baddie
-        IF ( player_died /* jjp == TRUE */ OR heart_finished /* jjp == TRUE */ ) //Player died back to normal status
+        IF ( player_died OR heart_finished ) //Player died back to normal status
             angry = mon_norm;
             hur_angry = FALSE;
         END
@@ -9238,7 +9088,7 @@ BEGIN
             END
         END
         GRAPH = gfxnum;
-        IF ( level_stop_what == stop_heart OR drop_nast /* jjp == TRUE */ )
+        IF ( level_stop_what == stop_heart OR drop_nast )
             goud = Face_Down; //make all diag sprites fall to the ground if we have collected a heart
         END
         IF ( del_start > mon_delay ) //del start timer, wait del const of frames to wait
@@ -9285,7 +9135,7 @@ BEGIN
             //update x position
             xpos += xmov;
             //update y coords
-            IF ( drop_nast /* jjp == TRUE */ AND ystop /* jjp == TRUE */ )
+            IF ( drop_nast AND ystop )
                 drop_nast = FALSE;
             END
             IF ( level_stop_what < stop_monsters )
@@ -9317,7 +9167,7 @@ BEGIN
                 END
             END
             //hit a platform Left Right then turn around
-            IF ( xstop /* jjp == TRUE */ )
+            IF ( xstop )
                 IF ( facing == Face_Left ) //face the other way
                     facing = Face_Right;
                 ELSE
@@ -9325,7 +9175,7 @@ BEGIN
                 END
             END
             //hit a platform above or below move the other way
-            IF ( ystop /* jjp == TRUE */ )
+            IF ( ystop )
                 IF ( goud == Face_Up ) //swap movement
                     goud = Face_Down;
                 ELSE
@@ -9429,7 +9279,7 @@ BEGIN
     END
     //Up
     IF ( ydmov < 0 )
-        IF ( xcolfind3( xcolpos2, ycolpos + upadj + ydmov ) /* jjp == TRUE */ )
+        IF ( xcolfind3( xcolpos2, ycolpos + upadj + ydmov ) )
             ystop = TRUE;
             ydmov = 16 - ( ycolpos MOD 16 ); //for mid air adjustment to be on block
             IF ( ydmov == 16 )
@@ -9440,7 +9290,7 @@ BEGIN
     END
     //Down
     IF ( ydmov > 0 )
-        IF ( xcolfind3( xcolpos2, ycolpos + 31 + ydmov ) /* jjp == TRUE */ )
+        IF ( xcolfind3( xcolpos2, ycolpos + 31 + ydmov ) )
             ystop = TRUE;
             ydmov = 16 - ( ycolpos MOD 16 ); //for mid air adjustment to be on block
             IF ( ydmov == 16 )
@@ -9452,7 +9302,7 @@ BEGIN
     //Left
     IF ( xmov < 0 )
         chkplat = ycolfind2( xcolpos, ycolpos ); //check platforms
-        IF ( chkplat /* jjp == TRUE */ );
+        IF ( chkplat );
             father.xstop = TRUE;
             IF (( xcolpos2 ) mod 16 != 0 )
                 fadj = - (( xcolpos2 + 5 ) MOD 16 ); //+1
@@ -9467,7 +9317,7 @@ BEGIN
     //Right
     IF ( xmov > 0 )
         chkplat = ycolfind2( xcolpos + 31, ycolpos );
-        IF ( chkplat /* jjp == TRUE */ );
+        IF ( chkplat );
             father.xstop = TRUE;
             IF (( 16 - xcolpos2 + 4 ) MOD 16 != 0 )
                 fadj = 16 - ( xcolpos2 MOD 16 );
@@ -9627,7 +9477,7 @@ BEGIN
             IF ( x >= 28 ) //Might of reached the side of the screen
                 finished_exits = TRUE;
             END
-        UNTIL ( ecount > 2 OR Exit_No > 3 OR finished_exits /* jjp == TRUE */ )
+        UNTIL ( ecount > 2 OR Exit_No > 3 OR finished_exits )
         ypos = 29; //Bottom exits
     UNTIL ( Exit_No > 3 )
     exits_count = 0;
@@ -9712,7 +9562,7 @@ BEGIN
             Bubble_sprite( x, y, extrbub, rand( 0, 5 ), 0, 0, 0 );
         ELSE
             //Fire Bubble 1 in 4096 bubbles
-            IF ( RAND( 1, fire_bubble_rnd ) == 1 OR fire_bubble_go /* jjp == TRUE */ )
+            IF ( RAND( 1, fire_bubble_rnd ) == 1 OR fire_bubble_go )
                 fire_bubble_go = FALSE;
                 Fire_Bubble( x, y, 0 );
                 RETURN;
@@ -9744,7 +9594,7 @@ BEGIN
                         done = TRUE;
                     END
                 END //SWITCH
-                IF ( done /* jjp == TRUE */ )
+                IF ( done )
                     BREAK;
                 END
                 FRAME;
@@ -9784,7 +9634,7 @@ BEGIN
     anim_x_plr1 = ret_colected( 0 );
     anim_x_plr2 = ret_colected( 1 );
     //Player 1 extend bubbles all collected anim
-    IF ( anim_x_plr1 /* jjp == TRUE */ )
+    IF ( anim_x_plr1 )
         IF ( anim_x_p1tme < ext_animtime ) //check anim time
             anim_x_p1tme++; //increase anim time
         ELSE
@@ -9796,7 +9646,7 @@ BEGIN
         END
     END
     //Player 2 extend bubbles all collected anim
-    IF ( anim_x_plr2 /* jjp == TRUE */ )
+    IF ( anim_x_plr2 )
         IF ( anim_x_p2tme < ext_animtime ) //check anim time
             anim_x_p2tme++; //increase anim time
         ELSE
@@ -9877,8 +9727,8 @@ BEGIN
     LOOP
         GRAPH = animframe;
         //This animates them if the player has collected a whole set of them
-        IF (( plrx == 1 AND anim_x_plr1 /* jjp == TRUE */ ) OR
-            ( plrx == 2 AND anim_x_plr2 /* jjp == TRUE */ ))
+        IF (( plrx == 1 AND anim_x_plr1 ) OR
+            ( plrx == 2 AND anim_x_plr2 ))
             banim++;
             //resets the animation frames
             IF ( banim => 5 )
@@ -10005,7 +9855,7 @@ BEGIN
         //Check Full size bubble hardness map for movement
         //Get the square colour into movement array chk[]
         chk[ get_hard( platdata, bub_hrd, xpos + x_st, ypos + y_st ) ] = 1;
-        IF ( bob_go /* jjp == TRUE */ ) //only run if we have stoped moving so check for bobble
+        IF ( bob_go ) //only run if we have stoped moving so check for bobble
             //Bobble Colours
             chk[ 6 ] = 0; //up down
             chk[ 7 ] = 0; //left right
@@ -10036,7 +9886,7 @@ BEGIN
             END
         END
         no_move = FALSE; //initialise no move flag
-        IF ( ( drift_st /* jjp == TRUE */ OR drift_up /* jjp == TRUE */ ) and bob_go == FALSE AND y > 80 AND y <= 432 ) //DRIFT UP/DOWN
+        IF ( ( drift_st OR drift_up ) and bob_go == FALSE AND y > 80 AND y <= 432 ) //DRIFT UP/DOWN
             //start using the other array
             chk2[ 1 ] = 0;
             chk2[ 2 ] = 0;
@@ -10163,7 +10013,7 @@ BEGIN
                 END
             ELSE
                 lastx = lst_lf;
-                IF ( xbubfindlf( xpos -1, y, 0 ) /* jjp == TRUE */ AND runx == 0 AND y > 80 )
+                IF ( xbubfindlf( xpos -1, y, 0 ) AND runx == 0 AND y > 80 )
                     runx = xmov;
                 END
             END
@@ -10176,7 +10026,7 @@ BEGIN
                         xmov = 0;
                     END
                 ELSE
-                    IF ( xbubfindrt( xpos, y, 0 ) /* jjp == TRUE */ AND runx == 0 AND y > 80 )
+                    IF ( xbubfindrt( xpos, y, 0 ) AND runx == 0 AND y > 80 )
                         runx = xmov;
                     END
                     lastx = lst_rt;
@@ -10422,7 +10272,7 @@ BEGIN
         END
         sc_exit_st++; //Do the right exit next
     END //Find exit Loop
-    IF ( exit_found /* jjp == TRUE */ )
+    IF ( exit_found )
         RETURN ( sc_exit_st ); //Return the Exit Number
     ELSE
         RETURN ( 99 ); //Return the Terminator to say no exit found
@@ -10465,7 +10315,7 @@ BEGIN
             END
         END
     END
-    IF ( exits_closed /* jjp == TRUE */ )
+    IF ( exits_closed )
         RETURN ( 99 ); //only one exit is open so cant loop the sprite
     ELSE
         RETURN ( chk_open ); //has the last exit found
@@ -10720,12 +10570,12 @@ BEGIN
             //who checked to stop each bubble pushing each other in a endless jam
             //will cancel each others inertia out otherwise and we would get no
             //bubbles been shoved around
-            IF (( id2 > 0 AND who <> id2 ) OR ( id2 > 0 AND detman /* jjp == TRUE */ ))
+            IF (( id2 > 0 AND who <> id2 ) OR ( id2 > 0 AND detman ))
                 dist = get_dist( id2 );
-                IF (( pushtest( dist ) /* jjp == TRUE */ ) OR( bobble /* jjp == TRUE */ AND dist < 24 ))
+                IF (( pushtest( dist ) ) OR( bobble AND dist < 24 ))
                     xdist = get_distx( get_angle( id2 ), get_dist( id2 ));
                     ydist = get_disty( get_angle( id2 ), get_dist( id2 ));
-                    IF ( bobble /* jjp == TRUE */ AND xdist <= 4 ) //to stop bubbles merging into one position
+                    IF ( bobble AND xdist <= 4 ) //to stop bubbles merging into one position
                         xdist = rand( -2, 2 ); //random shove value left or right
                     END
                     inertia_to_other( id2, dist, xdist, ydist );
@@ -10737,7 +10587,7 @@ BEGIN
         END
         //kill the bubbles if trap bubble and on a potion level or secret room
         //END of BUBBLE LOOP
-    UNTIL ( kill != 0 OR level_next != 0 OR bubble_alldie /* jjp == TRUE */ OR level_type >= lv_potion )
+    UNTIL ( kill != 0 OR level_next != 0 OR bubble_alldie OR level_type >= lv_potion )
     //Do Pop and wake up dino which is trapped
     Pop_Dino_Bubble( x, y, id3 );
 END
@@ -10935,10 +10785,10 @@ BEGIN
         END
         IF ( bub_type == normbub ) //NORM bubble Squash
             IF ( who > 0 )
-                IF ( xinertia != 0 AND Ret_who( who ) /* jjp == TRUE */ )
+                IF ( xinertia != 0 AND Ret_who( who ) )
                     bounce_shove = 1;
                 END
-                IF ( yinertia != 0 AND Ret_who( who ) /* jjp == TRUE */ )
+                IF ( yinertia != 0 AND Ret_who( who ) )
                     bounce_shove = 2;
                 END
             END
@@ -11096,12 +10946,12 @@ BEGIN
             //who checked to stop each bubble pushing each other in a endless jam
             //will cancel each others inertia out otherwise and we would get no
             //bubbles been shoved around
-            IF (( id2 > 0 AND who <> id2 ) OR( id2 > 0 AND detman /* jjp == TRUE */ ))
+            IF (( id2 > 0 AND who <> id2 ) OR( id2 > 0 AND detman ))
                 dist = get_dist( id2 );
-                IF (( pushtest( dist ) /* jjp == TRUE */ ) OR( bobble /* jjp == TRUE */ AND dist < 24 ))
+                IF (( pushtest( dist ) ) OR( bobble AND dist < 24 ))
                     xdist = get_distx( get_angle( id2 ), get_dist( id2 ));
                     ydist = get_disty( get_angle( id2 ), get_dist( id2 ));
-                    IF ( bobble /* jjp == TRUE */ AND xdist <= 4 ) //to stop bubbles merging into one position
+                    IF ( bobble AND xdist <= 4 ) //to stop bubbles merging into one position
                         xdist = rand( -2, 2 ); //random shove value left or right
                     END
                     inertia_to_other( id2, dist, xdist, ydist );
@@ -11113,7 +10963,7 @@ BEGIN
         END
         //kill the bubbles if trap bubble and on a potion level or secret room
         //END of BUBBLE LOOP
-    UNTIL ( kill != 0 OR bubble_alldie /* jjp == TRUE */ OR ( ( bub_type == trapbub OR bub_type == extrbub ) AND level_type >= lv_potion ) )
+    UNTIL ( kill != 0 OR bubble_alldie OR ( ( bub_type == trapbub OR bub_type == extrbub ) AND level_type >= lv_potion ) )
     total_bubs--; //total bubbles on screen decrease
     signal_if_exists( son, s_kill );
     IF ( level_type == lv_end )
@@ -11151,7 +11001,7 @@ BEGIN
                         spec_Items[ 8 ].counter++; //umbrella items
                     END
                     count_water--; //Number of water bubbles on screen decrease
-                    IF ( check_onscr_y( y ) /* jjp == TRUE */ )
+                    IF ( check_onscr_y( y ) )
                         Water_gen( x, y, facing ); //Generate Water
                     END
                 END
@@ -11162,7 +11012,7 @@ BEGIN
                     END
                     s_trigger[ e_popn ] = TRUE; //Pop Sound
                     count_fire--; //Number of Fire bubbles on screen decrease
-                    IF ( check_onscr_y( y ) /* jjp == TRUE */ )
+                    IF ( check_onscr_y( y ) )
                         Fire_gen( x, y, facing ); //Generate Fire
                     END
                 END
@@ -11173,7 +11023,7 @@ BEGIN
                     END
                     s_trigger[ e_popn ] = TRUE; //Pop Sound
                     count_light--; //Number of Lightning bubbles on screen decrease
-                    IF ( check_onscr_y( y ) /* jjp == TRUE */ )
+                    IF ( check_onscr_y( y ) )
                         Lightning( x, y, facing ); //Generate Lightning
                     END
                 END
@@ -11307,7 +11157,7 @@ BEGIN
         END
         FRAME;
         //kill the bubbles if trap bubble and on a potion level or secret room
-    UNTIL ( kill != 0 OR bubble_alldie /* jjp == TRUE */ OR game_state == gs_adv_level )
+    UNTIL ( kill != 0 OR bubble_alldie OR game_state == gs_adv_level )
     //END of BUBBLE LOOP
     total_bubs--; //total bubbles on screen decrease
     signal_if_exists( son, s_kill );
@@ -11367,7 +11217,7 @@ BEGIN
     //bubble all die end of level = TRUE
     //food fall level or falling food conditions met
     //do only normal bubbles
-    IF ( bubble_alldie /* jjp == TRUE */ AND ffall_level /* jjp == TRUE */ AND bub_type == normbub AND game_state != gs_adv_level )
+    IF ( bubble_alldie AND ffall_level AND bub_type == normbub AND game_state != gs_adv_level )
         IF ( region_out( id, 1 ) == FALSE ) //check if on screen
             SWITCH ( ffall_type )
                 CASE ffall_t_level:
@@ -11483,7 +11333,7 @@ BEGIN
     //reset what score to do
     m_score[ 1 ] = 0;
     REPEAT
-        IF ( m_add[ 1 ] /* jjp == TRUE */ ) //trap bubble added
+        IF ( m_add[ 1 ] ) //trap bubble added
             m_timer = 0; //clear the time out
             m_add[ 1 ] = FALSE; //clear added trap bubble switch
         END
@@ -11495,7 +11345,7 @@ BEGIN
     IF ( m_score[ 1 ] != 0 AND level_type != lv_demo AND level_type != lv_instr )
         bubbob[ 0 ].score += score_mult( m_score[ 1 ] );
         scorebig( x, y, 1, plr -1, m_score[ 1 ] );
-        IF ( extra_items /* jjp == TRUE */ AND m_score[ 1 ] >= 1 )
+        IF ( extra_items AND m_score[ 1 ] >= 1 )
             lev_multi = TRUE; //multi pop of 3 done
             missed_multi = 0; //4 levels without multi set extra item - trap all monsters
             spec_items[ 60 ].counter = 0; //clear counter
@@ -11515,7 +11365,7 @@ BEGIN
     END
     m_score[ 2 ] = 0;
     REPEAT
-        IF ( m_add[ 2 ] /* jjp == TRUE */ )
+        IF ( m_add[ 2 ] )
             m_timer = 0;
             m_add[ 2 ] = FALSE;
         END
@@ -11529,7 +11379,7 @@ BEGIN
         bubbob[ 1 ].score += score_mult( m_score[ 2 ] );
         scorebig( x, y, 1, plr -1, m_score[ 2 ] );
     END
-    IF ( extra_items /* jjp == TRUE */ AND m_score[ 2 ] >= 1 )
+    IF ( extra_items AND m_score[ 2 ] >= 1 )
         lev_multi = TRUE; //multi pop of 3 done
         missed_multi = 0; //4 levels without multi set extra item - trap all monsters
         spec_items[ 60 ].counter = 0; //clear counter
@@ -11609,7 +11459,7 @@ BEGIN
                     angle -= angadd;
                 END
             END
-            IF ( gojump /* jjp == TRUE */ ) //part of jump routine used for this pop animation
+            IF ( gojump ) //part of jump routine used for this pop animation
                 ydmov = vel / grav;
                 IF ( ydmov == 0 )
                     ydmov = 1;
@@ -11636,7 +11486,7 @@ BEGIN
                 END
                 x += xmov;
             ELSE
-                IF ( xcolfind( x + xmov, y + 24 + ydmov ) /* jjp == TRUE */ AND
+                IF ( xcolfind( x + xmov, y + 24 + ydmov ) AND
                     xblockfind( x + xmov, y + 16 + ydmov ) == FALSE )
                     xstop = TRUE;
                 END
@@ -11650,7 +11500,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL ( xstop /* jjp == TRUE */ OR baddie_alldie == mkill_do_nothing OR game_state == gs_adv_level ) //baddie all die to stop infinite fall through of nastie error
+    UNTIL ( xstop OR baddie_alldie == mkill_do_nothing OR game_state == gs_adv_level ) //baddie all die to stop infinite fall through of nastie error
     IF ( killtype >= 10 )
         diam_id = killtype -10; //for item weapon kills gives a diamond 6k-9k
     END
@@ -11768,7 +11618,7 @@ BEGIN
             END
         END
         FRAME( frate );
-        IF ( timergo /* jjp == TRUE */ AND timer[ 4 ] > end_time ) //food timed out
+        IF ( timergo AND timer[ 4 ] > end_time ) //food timed out
             anim( x, y -16, dis_star, 5, 30, 8, 1 );
             BREAK;
         END
@@ -11817,7 +11667,7 @@ BEGIN
             anim( x, y -16, dis_star, 5, 30, 8, 1 );
             BREAK;
         END
-        IF ( hrt_anim /* jjp == TRUE */ AND timer[ 2 ] == 0 )
+        IF ( hrt_anim AND timer[ 2 ] == 0 )
             IF ( GRAPH == hrt_frm1 )
                 GRAPH = hrt_frm2;
             ELSE
@@ -11986,7 +11836,6 @@ BEGIN
     //Umbrellas and Gold Door
     IF ( ( sprid => 6 AND sprid <= 8 ) OR sprid == 47 )
         last_completed_time = level_timer;
-        //level_next_go = TRUE; //advance level
         level_next = 0; //reset next level timer
         game_state = gs_start_adv_level;
         baddie_alldie = mkill_do_nothing; //kill all baddie processes
@@ -12101,15 +11950,15 @@ BEGIN
     //Wait until space is pressed
     LOOP
         //decrease level
-        IF ( keys_pressed[ plr ].pl_left /* jjp == TRUE */ AND level_j > cur_level )
+        IF ( keys_pressed[ plr ].pl_left AND level_j > cur_level )
             level_j--;
         END
         //increase level
-        IF ( keys_pressed[ plr ].pl_right /* jjp == TRUE */ AND level_j < 100 )
+        IF ( keys_pressed[ plr ].pl_right AND level_j < 100 )
             level_j++;
         END
         //pressed fire so now quit loop and goto the level selected by the player
-        IF ( keys_pressed[ plr ].pl_fire /* jjp == TRUE */ AND level_j != cur_level )
+        IF ( keys_pressed[ plr ].pl_fire AND level_j != cur_level )
             BREAK;
         END
         FRAME( 500 );
@@ -12375,7 +12224,7 @@ BEGIN
     END
     Fade_on(200);
     LOOP
-        IF ( door2.kill /* jjp == TRUE */ OR sr_player_died /* jjp == TRUE */ ) //until exit entered or dino killed by the ghost
+        IF ( door2.kill OR sr_player_died ) //until exit entered or dino killed by the ghost
             BREAK;
         END
         FRAME;
@@ -12415,7 +12264,7 @@ BEGIN
             BREAK;
         END
         //kill it hit platform or when new level
-    UNTIL ( sr_player_died /* jjp == TRUE */ )
+    UNTIL ( sr_player_died )
     secret_total--; //decrease secret room diamond count
 END
 
@@ -12528,7 +12377,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
 END
 
 //Potions
@@ -12638,11 +12487,11 @@ BEGIN
     //    plr1_score = total_food;
     //TOTALS
     move_y1 = y_pot500;
-    IF ( plr_1_alive /* jjp == TRUE */ )
+    IF ( plr_1_alive )
         anim_ids[ 0 ] = static_anim2( x_pot500, y_pot500, pri_potion, pot_500 );
         textids[ 4 ] = write_var( font_pg, x_pot1_sc, y_pot_sc, 5, plr1_score );
     END
-    IF ( plr_2_alive /* jjp == TRUE */ )
+    IF ( plr_2_alive )
         anim_ids[ 1 ] = static_anim2( x_pot500 + x_pot2_add, y_pot500, pri_potion, pot_500 + 1 );
         textids[ 5 ] = write_var( font_pb, x_pot1_sc + x_pot2_add, y_pot_sc, 5, plr2_score );
     END
@@ -12650,14 +12499,14 @@ BEGIN
     //Do Graphic if perfect
     IF ( plr1_score + plr2_score == total_food )
         perfect = TRUE;
-        IF ( plr_1_alive /* jjp == TRUE */ )
+        IF ( plr_1_alive )
             IF ( plr1_score >= plr2_score )
                 anim_ids[ 2 ] = static_anim2( x_pot500, y_pot500 + 32, pri_potion, pot_perfect + 1 );
             ELSE
                 anim_ids[ 2 ] = static_anim2( x_pot500, y_pot500 + 32, pri_potion, pot_perfect );
             END
         END
-        IF ( plr_2_alive /* jjp == TRUE */ )
+        IF ( plr_2_alive )
             IF ( plr2_score >= plr1_score )
                 anim_ids[ 3 ] = static_anim2( x_pot500 + x_pot2_add, y_pot500 + 32, pri_potion, pot_perfect + pot_badd + 1 );
             ELSE
@@ -12681,7 +12530,7 @@ BEGIN
         FRAME;
     UNTIL ( move_y1 <= y_pot_stop_loc1 )
     //move up Perfect
-    IF ( perfect /* jjp == TRUE */ )
+    IF ( perfect )
         REPEAT
             IF ( anim_ids[ 2 ] != 0 ) //Green Player
                 anim_ids[ 2 ].y -= y_pot_add; //move graphic perfect
@@ -12695,7 +12544,7 @@ BEGIN
     END
     //add 50,000 or 100,000 to each player if they have collected the whole lot off food
     IF ( plr1_score + plr2_score == total_food )
-        IF ( plr_1_alive /* jjp == TRUE */ )
+        IF ( plr_1_alive )
             IF ( plr1_score >= plr2_score )
                 //100,000
                 bubbob[ 0 ].score += 100000; //add 10,000 to player 1 score
@@ -12704,7 +12553,7 @@ BEGIN
                 bubbob[ 0 ].score += 50000; // add 50,000 to player 1 score
             END
         END
-        IF ( plr_2_alive /* jjp == TRUE */ )
+        IF ( plr_2_alive )
             IF ( plr2_score >= plr1_score )
                 //100,000
                 bubbob[ 1 ].score += 100000; //add 10,000 to player 1 score
@@ -12754,14 +12603,7 @@ BEGIN
     level_type = lv_normal;
     level_next = level_timer + 1;
     //The song will restart now
-#if 0   // jjp
-    IF ( do_song != 0 )
-        eff_channel = using_channel[ Pri_1 ]; //get effect id playing
-        IF ( sound_is_playing( eff_channel ) /*AND eff_channel != 0 */)
-            sound_stop( eff_channel );
-        END
-    END
-#endif
+
     FRAME;
 
 END
@@ -12991,7 +12833,7 @@ BEGIN
             //update y coords
             ypos += ydmov;
             //hit a platform turn around
-            IF ( xstop /* jjp == TRUE */ )
+            IF ( xstop )
                 IF ( golr == 1 )
                     golr = 2;
                     s_trigger[ e_firesph ] = TRUE;
@@ -13001,7 +12843,7 @@ BEGIN
                 END
             END
             //hit a platform above below move the other way
-            IF ( ystop /* jjp == TRUE */ )
+            IF ( ystop )
                 IF ( goud == 1 ) //swap movement
                     goud = 2;
                     s_trigger[ e_firesph ] = TRUE;
@@ -13066,7 +12908,7 @@ BEGIN
             END
         END
         nextstar--;
-        IF ( level_next != 0 OR kill_secret_eff /* jjp == TRUE */ )
+        IF ( level_next != 0 OR kill_secret_eff )
             BREAK;
         END //stop if next level timer started, means last baddie killed
         FRAME;
@@ -13108,7 +12950,7 @@ BEGIN
         xmov += xsp;
         x = xpos + xmov / 10; //divide by 10 to get a angle
         y += 4;
-        IF ( check_xbounds( x ) /* jjp == TRUE */ OR kill_secret_eff /* jjp == TRUE */ OR y > y_dn_start )
+        IF ( check_xbounds( x ) OR kill_secret_eff OR y > y_dn_start )
             BREAK;
         END
         //all other dection is done in the nastie sprites for speed reasons
@@ -13166,7 +13008,7 @@ BEGIN
         x = xpos + xmov / 10; //divide by 10 to get a angle
         y += 4;
         FRAME;
-    UNTIL ( y > y_dn_start OR check_xbounds( x ) /* jjp == TRUE */ OR kill_secret_eff /* jjp == TRUE */ OR game_state == gs_adv_level OR game_state == gs_level_anims )
+    UNTIL ( y > y_dn_start OR check_xbounds( x ) OR kill_secret_eff OR game_state == gs_adv_level OR game_state == gs_level_anims )
     if ( exists( father ) ) father.multi--; end //to count how many on the screen
 END
 
@@ -13207,7 +13049,7 @@ PRIVATE
 BEGIN
     level_stop_what = stop_monsters;
     s_trigger[ e_clock ] = TRUE;
-    c_time_out = level_timer + 300; //5 minutes timer out
+    c_time_out = level_timer + 10; // 10 seconds timer out
     LOOP
         FRAME;
         IF ( level_next != 0 )
@@ -13235,7 +13077,7 @@ PRIVATE
     int cpy_y_loc;
 BEGIN
     file = blocksfile;
-    y_dest = lastdrawloc + 400; //get where the background display scroll plane is
+    y_dest = drawloc + 400; //get where the background display scroll plane is
     drawcount = 0;
     ysize = 16;
     s_trigger[ e_wcross ] = TRUE; //Trigger water Flood sound
@@ -13457,7 +13299,7 @@ BEGIN
         x += xspeed;
         y += yspeed;
         FRAME;
-    UNTIL ( xstop /* jjp == TRUE */ OR ystop /* jjp == TRUE */ )
+    UNTIL ( xstop OR ystop )
 END
 
 
@@ -13937,7 +13779,7 @@ BEGIN
             GRAPH = aframe;
         END
         FRAME;
-        IF ( kill /* jjp == TRUE */ OR game_state == gs_adv_level OR level_type == lv_secret OR level_type == lv_extend )
+        IF ( kill OR game_state == gs_adv_level OR level_type == lv_secret OR level_type == lv_extend )
             BREAK;
         END
     END //loop end
@@ -13989,7 +13831,7 @@ BEGIN
             END
         END //stop movement end if
         FRAME;
-    UNTIL ( id2.kill /* jjp == TRUE */ OR y >= y_dn_stop OR baddie_alldie != 0 ) //baddie all die to stop infinite fall through of nastie error)
+    UNTIL ( id2.kill OR y >= y_dn_stop OR baddie_alldie != 0 ) //baddie all die to stop infinite fall through of nastie error)
     bad_on_screen--; //number on screen
     //last baddie popped flag to detect we have stored the time level took to complete
     IF ( bad_on_screen == 0 )
@@ -14222,7 +14064,7 @@ BEGIN
                 xstop = TRUE;
             END
         END
-    UNTIL ( xstop /* jjp == TRUE */ OR kill /* jjp == TRUE */ ) //stop when hits the sides of the screen or hits boss
+    UNTIL ( xstop OR kill ) //stop when hits the sides of the screen or hits boss
 END
 
 //Does a zapp of the lightning bolt
@@ -14260,7 +14102,7 @@ BEGIN
         FRAME;
     END //main loop
     //Boss hit of lightning
-    IF ( !exists( father ) or father.kill /* jjp == TRUE */ )
+    IF ( !exists( father ) or father.kill )
         animframe = lning_boss;
         LOOP
             GRAPH = animframe;
@@ -14441,7 +14283,7 @@ BEGIN
     player_died = TRUE;
     who = id2; //who made this kill sprite
     //Bug if last extend bubble collected and one player has died
-    IF ( anim_x_plr1 /* jjp == TRUE */ OR anim_x_plr2 /* jjp == TRUE */ )
+    IF ( anim_x_plr1 OR anim_x_plr2 )
         RETURN;
     END
     IF ( level_type != lv_secret )
@@ -14579,11 +14421,11 @@ END
 PROCESS Players_Start()
 BEGIN
     //player 1
-    IF ( Player_Alive( 0 ) /* jjp == TRUE */ )
+    IF ( Player_Alive( 0 ) )
         Bubbled_Player( 0 );
     END
     //player 2
-    IF ( Player_Alive( 1 ) /* jjp == TRUE */ )
+    IF ( Player_Alive( 1 ) )
         Bubbled_Player( 1 );
     END
 END
@@ -14846,14 +14688,14 @@ BEGIN
                 id4.kill = mkill_fireball;
             END
             //cheat kill the other player
-            IF ( fireball_deadly /* jjp == TRUE */ ) //player can be killed by the other player
+            IF ( fireball_deadly ) //player can be killed by the other player
                 IF ( id3 = collision( type man ))
                     IF ( id3.inv <= 0 AND id2 != id3 ) //check to see if invunrable
                         id3.kill = Kill_D_FireInv; //Kill the dino
                         plr = ret_dino_num( id2 );
                         bubbob[ plr ].score += 1000; //get points for killing other player
                         //BREAK;
-                        IF ( extra_items /* jjp == TRUE */ )
+                        IF ( extra_items )
                             spec_items[ 59 ].counter++; //Fire bubble
                         END
                     END
@@ -14861,7 +14703,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL ( xstop /* jjp == TRUE */ )
+    UNTIL ( xstop )
     //die fireball decrease to nothing in size
     GRAPH = fireball;
     animfrm = 100;
@@ -14995,7 +14837,7 @@ BEGIN
             IF ( id4 != 0 )
                 BREAK;
             END
-            IF ( trap_player /* jjp == TRUE */ AND level_next == 0 )
+            IF ( trap_player AND level_next == 0 )
                 id2 = collision( type man );
                 IF ( id2 != id3 AND id2 != 0 )
                     blow_this = blow_player;
@@ -15005,7 +14847,7 @@ BEGIN
                 END
             END
             FRAME;
-        UNTIL ( mcount > lifetime OR xstop /* jjp == TRUE */ )
+        UNTIL ( mcount > lifetime OR xstop )
         IF ( total_bubs > max_bubs )
             popit = id3;
         END
@@ -15247,7 +15089,7 @@ BEGIN
         IF ( level_stop_what != stop_everything ) //HURRY UP Freeze game
             //man_speed = bubbob[d_index].shoes;  //speed bub bob moves across the screen
             //Kill the player
-            IF ( water_inv /* jjp == TRUE */ OR game_state == gs_adv_level )
+            IF ( water_inv OR game_state == gs_adv_level )
                 kill = FALSE;
             END
             man_speed = bubbob[ d_index ].shoes; //speed bub bob moves across the screen
@@ -15270,14 +15112,14 @@ BEGIN
             END
             //Bubble Key Pressed
             IF ( bubbob[ d_index ].bubtimer <= 0 )
-                IF ( bubbob[ d_index ].bubkey /* jjp == TRUE */ )
+                IF ( bubbob[ d_index ].bubkey )
                     bubble = TRUE;
                     blow_bubble( d_index, id );
                 END
             ELSE
                 bubbob[ d_index ].bubtimer--;
             END
-            IF ( bubble /* jjp == TRUE */ )
+            IF ( bubble )
                 n_ind = 3;
             END
             IF ( g_ind <> n_ind ) //current anim grap index is diff to new grap index
@@ -15293,7 +15135,7 @@ BEGIN
                 gfxnum++;
                 IF ( gfxnum > bubanim[ g_ind ].a_end + gfxadd )
                     gfxnum = bubanim[ g_ind ].a_start + gfxadd;
-                    IF ( bubble /* jjp == TRUE */ )
+                    IF ( bubble )
                         bubble = FALSE;
                     END
                 END
@@ -15332,7 +15174,7 @@ BEGIN
                 xdist = get_distx( get_angle( id2 ), get_dist( id2 ));
                 ydist = get_disty( get_angle( id2 ), get_dist( id2 ));
                 //shove em left or right
-                IF ( pushtest( dist ) /* jjp == TRUE */ )
+                IF ( pushtest( dist ) )
                     IF ( xmov != 0 ) //Shove bubble when moving
                         IF ( xdist > 0 )
                             id2.xinertia = man_speed;
@@ -15371,7 +15213,7 @@ BEGIN
             //check for jump key
             //checking for fall == false stops jumping in mid air
             //joveride - does jumping on bubbles
-            IF (( keys_pressed[ d_index ].pl_jump AND jump == 0 AND fall == 0 ) OR joveride /* jjp == TRUE */ )
+            IF (( keys_pressed[ d_index ].pl_jump AND jump == 0 AND fall == 0 ) OR joveride )
                 joveride = FALSE; //does jumping on bubbles
                 s_trigger[ e_jump ] = TRUE; //trigger jump sound
                 vel = jumpup[ man_speed ].vel; //jump up
@@ -15386,7 +15228,7 @@ BEGIN
                     bubbob[ d_index ].score += 500;
                 END
             END
-            IF ( jump /* jjp == TRUE */ )
+            IF ( jump )
                 IF ( vel == 0 AND grav == 0 )
                     jump = FALSE;
                 ELSE
@@ -15409,7 +15251,7 @@ BEGIN
             xstop = FALSE;
             //left
             IF ( keys_pressed[ d_index ].pl_left )
-                IF ( jump /* jjp == TRUE */ )
+                IF ( jump )
                     IF ( man_speed == 3 ) //adjust run speed when jumping
                         xmov = -2; //normal speed
                     ELSE
@@ -15426,7 +15268,7 @@ BEGIN
             END
             //right
             IF ( keys_pressed[ d_index ].pl_right )
-                IF ( jump /* jjp == TRUE */ OR fall > 0 )
+                IF ( jump OR fall > 0 )
                     IF ( man_speed == 3 ) //adjust run speed when jumping
                         xmov = 2; //normal speed
                     ELSE
@@ -15489,7 +15331,7 @@ BEGIN
             //Water flow movement
             id2 = bubbob[ d_index ].water_id; //is there a water_dino process for this player?
             IF ( id2 != 0 )
-                IF ( jump /* jjp == TRUE */ AND id2.who /* jjp == TRUE */ ) //allow jump out of water
+                IF ( jump AND id2.who ) //allow jump out of water
                     id2.kill = TRUE;
                 ELSE
                     //move with the water down the screen
@@ -15551,7 +15393,7 @@ BEGIN
                 IF ( id3 == 0 AND id3 != plr_id ) //not hitting water
                     kill = TRUE;
                 END
-                IF ( kill /* jjp == TRUE */ OR region_out( id, 1 ) /* jjp == TRUE */ ) //not hitting water
+                IF ( kill OR region_out( id, 1 ) ) //not hitting water
                     bubbob[ whichdino ].water_id = 0;
                     x = father.x; //process hides behind the water and advances down the screen
                     y = father.y;
@@ -15644,7 +15486,7 @@ BEGIN
         END
         fcol1 = xcolfind( xcolpos2 + x_j_adj, ycolpos + 31 + ydmov );
         fcol2 = xblockfind( xcolpos2 + x_j_adj, ycolpos + 31 );
-        IF ( fcol1 /* jjp == TRUE */ AND fcol2 == FALSE )
+        IF ( fcol1 AND fcol2 == FALSE )
             father.ydmov = 0;
             jump = FALSE;
             father.jmov = FALSE; //left right jump move
@@ -15653,7 +15495,7 @@ BEGIN
     //Left
     IF ( xmov < 0 )
         chkplat = ycolfind( xcolpos, ycolpos ); //check platforms
-        IF ( chkplat /* jjp == TRUE */ );
+        IF ( chkplat );
             father.xstop = TRUE;
             father.xmov = 0;
             IF (( xcolpos2 + 5 ) MOD 16 != 0 )
@@ -15665,7 +15507,7 @@ BEGIN
     //Right
     IF ( xmov > 0 )
         chkplat = ycolfind( xcolpos + 31, ycolpos );
-        IF ( chkplat /* jjp == TRUE */ );
+        IF ( chkplat );
             father.xmov = 0;
             father.xstop = TRUE;
             IF (( 16 - xcolpos2 + 4 ) MOD 16 != 0 )
@@ -15754,7 +15596,7 @@ BEGIN
     //LOWER BLOCK
     blockdet = get_hard( platdata, plt_hrd, xst, yst + 31 );
     //For jumping through blocks
-    IF ( father.jump /* jjp == TRUE */ )
+    IF ( father.jump )
         IF ( jdet == 1 AND blockdet == 0 )
             RETURN ( FALSE );
         END
@@ -15822,11 +15664,11 @@ BEGIN
         drawloc = 512;
     END
     this_draw_loc = drawloc;
-    lastdrawloc = drawloc2; //for doing the flood graphics
+
     IF ( level_type == lv_instr )
         Background_Draw( 80 );
     ELSE
-        IF ( drawloc2 != 80 )
+        IF ( drawloc != 80 )
             Background_Draw( 80 );
         ELSE
             Background_Draw( 544 );
@@ -15837,7 +15679,7 @@ BEGIN
 // jjp    convert_palette( blocksfile, scr_graf, offset pal );
     //Draw the platforms and borders
     REPEAT
-        do_scr_bline( drawcount, this_draw_loc, new_h_map );
+        Do_Scr_Bline( drawcount, this_draw_loc, new_h_map );
         drawcount += 2;
         this_draw_loc += 32;
     UNTIL ( drawcount >= blocks_dwn )
@@ -15870,17 +15712,16 @@ BEGIN
     game_state = gs_adv_level;
     bubble_alldie = TRUE;
     signal( type food, s_kill );
-    Topborder();
     IF ( level_type == lv_secret OR level_type == lv_extend )
         noscrolldraw = TRUE;
         Fade_off(200);
         REPEAT
             FRAME;
-        UNTIL ( NOT fade_info.fading )
+        UNTIL ( !fade_info.fading )
         from_ext_secret = TRUE;
         level_type = lv_normal;
     END
-    IF ( doing_effect[ pri_1 ] != e_normal AND ( do_music /* jjp == TRUE */ /* jjp OR do_song != 0 */ ))
+    IF ( doing_effect[ pri_1 ] != e_normal AND do_music )
         s_trigger[ e_normal ] = TRUE;
     END
     //super umbrella = goto n screens infront
@@ -15927,17 +15768,17 @@ BEGIN
             drawloc = 48; //Even Levels 2,4,6,8 etc
             //  drawloc2 = 544;
         END
-        lastdrawloc = drawloc2; //for doing the flood graphics
+
         //clears the screen
         do_scr_clearscreen( drawloc );
 // jjp        convert_palette( blocksfile, scr_graf, offset pal );
         Border_left( drawloc );
         //BACKGROUNDS
-        //    IF (do_bgrounds /* jjp == TRUE */)
-        Background_Draw( drawloc2 );
-        //    END
+        IF ( do_bgrounds )
+            Background_Draw( drawloc );
+        END
         //DRAW the Platforms and Right Border
-        Do_Scr_Bline_NLevel( drawloc, drawloc2 ); //draw all the platforms to the screen
+        Do_Scr_Bline_NLevel( drawloc, drawloc /*drawloc2*/ ); //draw all the platforms to the screen
 
         cur_level++; //draw level counter
         scrollcount = 0;
@@ -15962,22 +15803,14 @@ BEGIN
             END
         UNTIL ( scrollcount >= 464 - scr_adj )
         //End Scroll
-        IF ( from_ext_secret /* jjp == TRUE */ ) //(level_type == lv_secret OR level_type == lv_extend)
+        IF ( from_ext_secret ) //(level_type == lv_secret OR level_type == lv_extend)
             Fade_on(200);
             REPEAT
                 FRAME;
-            UNTIL ( NOT fade_info.fading )
+            UNTIL ( !fade_info.fading )
             s_trigger[ e_normal ] = TRUE;
-#if 0   // jjp
-            IF ( do_song != 0 )
-                eff_channel = using_channel[ Pri_1 ]; //get effect id playing
-                IF ( sound_is_playing( eff_channel ) /*AND eff_channel != 0 */)
-                    sound_stop( eff_channel );
-                END
-            END
-#endif
         END
-        IF ( noscrolldraw /* jjp == TRUE */ )
+        IF ( noscrolldraw )
             noscrolldraw = FALSE;
         END
         IF ( scr_adj == 3 )
@@ -16019,11 +15852,6 @@ BEGIN
         //will create an error later on in the game
         IF ( act_level < dest_level ) //unload the map if we havnt reached the level
             fpg_unload( platdata );
-        END
-        IF ( drawloc2 == 80 )
-            drawloc2 = 544;
-        ELSE
-            drawloc2 = 80;
         END
     UNTIL ( act_level >= dest_level )
     //RESIZE Hardness Maps to 340,288
@@ -16074,10 +15902,10 @@ PRIVATE
     int b_graph;
 BEGIN
     xloc = 32;
-    y = yloc;
+    y = yloc + 32;
     //Shadows are placed on later with the platform draw routine
     //locate the correct graphic for this level
-    IF ( do_bgrounds /* jjp == TRUE */ )
+    IF ( do_bgrounds )
         SWITCH ( level_type )
             CASE lv_extend:
                 b_graph = 422; //star backdrop
@@ -16138,7 +15966,7 @@ PRIVATE
 BEGIN
     shadow_grph = bgrounds + (( cur_level -1 ) * 2 );
     shadow_grph++;
-    IF ( do_bgrounds /* jjp == TRUE */ )
+    IF ( do_bgrounds )
         y_side = yloc2 - 24;
         FOR ( lcount = 0; lcount < blocks_dwn; lcount++ )
             map_xput( blocksfile, scr_bgrd, shadow_grph, sml_xloc2 - 16, sml_yloc + y_side, 0, 100, 4 );
@@ -16148,8 +15976,8 @@ BEGIN
     //Clips graphics from the between screen gap on the background
     IF ( yloc == 48 )
         clip_y_placement = 464;
-        //    ELSE
-        //      clip_placement = 0;
+    ELSE
+        clip_y_placement = 0;
     END
     REPEAT
         x_drwloc = 0;
@@ -16162,7 +15990,7 @@ BEGIN
                 //Platform block
                 map_put( blocksfile, scr_graf, blocksfile, sm_block_grf, sml_xloc + x_drwloc, sml_yloc + yloc );
                 //Shadow Block
-                IF ( do_bgrounds /* jjp == TRUE */ )
+                IF ( do_bgrounds )
                     map_xput( blocksfile, scr_bgrd, shadow_grph, sml_xloc2 + x_drwloc, sml_yloc2 + yloc2, 0, 100, 4 );
                 END
             END
@@ -16172,7 +16000,7 @@ BEGIN
                 //Platform block
                 map_put( blocksfile, scr_graf, blocksfile, sm_block_grf, sml_xloc + x_drwloc, bl_even_line + sml_yloc + yloc );
                 //Shadow Block
-                IF ( do_bgrounds /* jjp == TRUE */ )
+                IF ( do_bgrounds )
                     map_xput( blocksfile, scr_bgrd, shadow_grph, sml_xloc2 + x_drwloc, bl_even_line + sml_yloc2 + yloc2, 0, 100, 4 );
                 END
             END
@@ -16228,17 +16056,7 @@ PRIVATE
     int x_drwloc; //location on the screen
     int cl_count;
 BEGIN
-    cl_count = 0;
-    REPEAT
-        x_drwloc = 0;
-        FOR ( lcount = 0; lcount < ( blocks_acr + 6 ) / 2; lcount++ )
-            //map_put( blocksfile, scr_graf, blocksfile, scr_clearer, x_drwloc, yloc );
-            map_clear( blocksfile, scr_graf, x_drwloc, yloc, 32, 32 );
-            x_drwloc += 32;
-        END
-        cl_count += 2;
-        yloc += 32;
-    UNTIL ( cl_count > blocks_dwn )
+    map_clear( blocksfile, scr_graf, 0, yloc, 32 * ( blocks_acr + 6 ) / 2, yloc + 13 * 32 );
 END
 
 //every 12 levels display a big boss to remind the player why you are on this quest
@@ -16341,7 +16159,7 @@ BEGIN
         END
         anim_del++;
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
 END
 
 
@@ -16409,7 +16227,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
 END
 
 //Displays a graphic on the screen with no animation
@@ -16425,7 +16243,7 @@ BEGIN
     GRAPH = an_start;
     REPEAT
         FRAME;
-    UNTIL ( !exists( father ) or father.kill /* jjp == TRUE */ or kill /* jjp == TRUE */ )
+    UNTIL ( !exists( father ) or father.kill or kill )
 END
  //Anim2
 //Displays a graphic on the screen with no animation
@@ -16441,7 +16259,7 @@ BEGIN
     GRAPH = an_start;
     REPEAT
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
 END
 
 
@@ -16506,7 +16324,7 @@ BEGIN
             gfxnum++;
             IF ( gfxnum > bubanim[ g_ind ].a_end + gfxadd )
                 gfxnum = bubanim[ g_ind ].a_start + gfxadd;
-                IF ( bubble /* jjp == TRUE */ )
+                IF ( bubble )
                     bubble = FALSE;
                 END
             END
@@ -16521,7 +16339,7 @@ BEGIN
         //check for jump key
         //checking for fall == false stops jumping in mid air
         //joveride - does jumping on bubbles
-        IF (( keys_pressed[ d_index ].pl_jump AND jump == 0 AND fall == 0 ) OR joveride /* jjp == TRUE */ )
+        IF (( keys_pressed[ d_index ].pl_jump AND jump == 0 AND fall == 0 ) OR joveride )
             joveride = FALSE; //does jumping on bubbles
             s_trigger[ e_jump ] = TRUE; //trigger jump sound
             vel = -90; //velocity
@@ -16531,7 +16349,7 @@ BEGIN
             jump = TRUE; //jump switch to on
             sjumpy = y; //start jump pos to stop when hit this point
         END
-        IF ( jump /* jjp == TRUE */ )
+        IF ( jump )
             IF ( vel == 0 AND grav == 0 )
                 jump = FALSE;
             ELSE
@@ -16554,7 +16372,7 @@ BEGIN
         xstop = FALSE;
         //left
         IF ( keys_pressed[ d_index ].pl_left )
-            IF ( jump /* jjp == TRUE */ )
+            IF ( jump )
                 IF ( man_speed == 3 ) //adjust run speed when jumping
                     xmov = -2; //normal speed
                 ELSE
@@ -16568,7 +16386,7 @@ BEGIN
         END
         //right
         IF ( keys_pressed[ d_index ].pl_right )
-            IF ( jump /* jjp == TRUE */ OR fall > 0 )
+            IF ( jump OR fall > 0 )
                 IF ( man_speed == 3 ) //adjust run speed when jumping
                     xmov = 2; //normal speed
                 ELSE
@@ -16633,10 +16451,10 @@ BEGIN
     Fade_off(200);
     level_stop_what = stop_nothing;
     //sleep dinos
-    IF ( Player_Alive( 0 ) /* jjp == TRUE */ )
+    IF ( Player_Alive( 0 ) )
         signal_if_exists( bubbob[ 0 ].sprite_id, s_sleep );
     END
-    IF ( Player_Alive( 1 ) /* jjp == TRUE */ )
+    IF ( Player_Alive( 1 ) )
         signal_if_exists( bubbob[ 1 ].sprite_id, s_sleep );
     END
     //send keys to sleep as this will cancel out the autoplay
@@ -16786,10 +16604,10 @@ BEGIN
     game_state = gs_start_adv_level;
     signal_if_exists( keys_id, s_wakeup );
     //awaken dinos
-    IF ( Player_Alive( 0 ) /* jjp == TRUE */ )
+    IF ( Player_Alive( 0 ) )
         signal_if_exists( bubbob[ 0 ].sprite_id, s_wakeup );
     END
-    IF ( Player_Alive( 1 ) /* jjp == TRUE */ )
+    IF ( Player_Alive( 1 ) )
         signal_if_exists( bubbob[ 1 ].sprite_id, s_wakeup );
     END
 END
@@ -16837,7 +16655,7 @@ BEGIN
             GRAPH = anim_gph;
         END
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
     if ( exists( father ) ) father.kill = 3; end
 END
 
@@ -16961,21 +16779,6 @@ BEGIN
     UNTIL ( !exists( father ) or father.kill != 0 )
 END
 
-
-PROCESS Topborder() //To Blank the top bit of the screen off
-BEGIN
-    x = 60;
-    z = 1;
-    file = blocksfile;
-    GRAPH = 2;
-    LOOP
-        FRAME;
-        IF ( game_state == gs_level_reached OR game_state == gs_level_go )
-            BREAK;
-        END
-    END
-END
-
 /*
 STRUCT HiSc_Cheats[n_hs_cheats]
    string comptxt;
@@ -17041,7 +16844,7 @@ BEGIN
             enter_score( 1, bubbob[ 0 ].score ); //enter score process for player 1
             //Wait till player 1s score has been entered
             LOOP
-                IF ( kill /* jjp == TRUE */ )
+                IF ( kill )
                     BREAK;
                 END
                 FRAME;
@@ -17051,7 +16854,7 @@ BEGIN
             IF ( hi_loc2 != hisc_terminator )
                 Auto_Adv_Kill( 5 ); //Advance and set kill in this process to true after 5 seconds
                 LOOP
-                    IF ( kill /* jjp == TRUE */ )
+                    IF ( kill )
                         BREAK;
                     END
                     FRAME;
@@ -17074,7 +16877,7 @@ BEGIN
             Enter_score( 2, bubbob[ 1 ].score ); //enter score process for player 2
             //Wait till player 2s score has been entered
             LOOP
-                IF ( kill /* jjp == TRUE */ )
+                IF ( kill )
                     BREAK;
                 END
                 FRAME;
@@ -17216,7 +17019,7 @@ BEGIN
                 timer[ 9 ] = 0; //reset timer
                 txt_mov = FALSE;
                 //Key press left
-                IF ( keys_pressed[ key_plr ].pl_left /* jjp == TRUE */ )
+                IF ( keys_pressed[ key_plr ].pl_left )
                     //IF (key(_left))
                     txt_loc--;
                     txt_mov = TRUE;
@@ -17232,7 +17035,7 @@ BEGIN
                         END
                     END
                 END
-                IF ( keys_pressed[ key_plr ].pl_right /* jjp == TRUE */ )
+                IF ( keys_pressed[ key_plr ].pl_right )
                     IF ( txt_loc >= hi_many ) //text loc over the end of array of chars the user can cycle through
                         txt_loc = 0; //set text location to start of characters
                     END
@@ -17253,7 +17056,7 @@ BEGIN
                 txt_id = write( font_s, ret_xtext( xpos ), ret_ytext( ypos ), 3, hi_chars[ txt_loc ] );
                 txt_last = 0;
                 //ENTER! - Select Char key Pressed so store
-                IF ( keys_pressed[ key_plr ].pl_fire /* jjp == TRUE */ )
+                IF ( keys_pressed[ key_plr ].pl_fire )
                     IF ( txt_loc == txt_rub ) //rub text from array and screen
                         IF ( entered > 0 )
                             entered--;
@@ -17421,7 +17224,7 @@ BEGIN
     Auto_Adv_Kill( 10 ); //in seconds how long to auto advance the titlescreen
     LOOP
         FRAME;
-        IF ( kill /* jjp == TRUE */ )
+        IF ( kill )
             BREAK;
         END
     END
@@ -17455,7 +17258,7 @@ BEGIN
         IF ( timer[ 3 ] >= frate / 2 )
             write_move( txt, 640, 640 );
         END
-        IF ( !exists( father ) or father.kill /* jjp == TRUE */ )
+        IF ( !exists( father ) or father.kill )
             BREAK;
         END
         FRAME( 200 );
@@ -17511,7 +17314,7 @@ BEGIN
         IF ( y_fin == FALSE AND y_last == y ) //Sets the global animation to done if the banner has stoped moving
             y_fin = TRUE; //set the flag to stop this from running more than once
             tscreen_done_anim_count++;
-            IF ( all_completed /* jjp == TRUE */ ) //End boss level completed - display Magenta - Clear 100 when banner stops moving
+            IF ( all_completed ) //End boss level completed - display Magenta - Clear 100 when banner stops moving
                 IF ( plr == 1 ) //Magenta Clear 100 sprite
                     Static_Anim_Titles( x_comp_all1, y_comp_all, pri_clear100, Lev_Clear100 ); //Clear 100
                 ELSE
@@ -17521,7 +17324,7 @@ BEGIN
         END
         kill = !exists( father ) or father.kill;
         FRAME;
-        IF ( kill /* jjp == TRUE */ )
+        IF ( kill )
             BREAK;
         END
     END
@@ -17564,7 +17367,7 @@ BEGIN
                 GRAPH = gph_st;
             END
         END
-        IF ( !exists( father ) or father.kill /* jjp == TRUE */ )
+        IF ( !exists( father ) or father.kill )
             BREAK;
         END
         FRAME;
@@ -17596,7 +17399,7 @@ BEGIN
                 GRAPH = gph_st;
             END
         END
-        IF ( !exists( father ) or father.kill /* jjp == TRUE */ )
+        IF ( !exists( father ) or father.kill )
             BREAK;
         END
         FRAME;
@@ -17628,7 +17431,7 @@ BEGIN
                 GRAPH = gph_st;
             END
         END
-        IF ( !exists( father ) or father.kill /* jjp == TRUE */ )
+        IF ( !exists( father ) or father.kill )
             BREAK;
         END
         FRAME;
@@ -17652,7 +17455,7 @@ BEGIN
                 GRAPH = lv_gf;
             END
         END
-        IF ( !exists( father ) or father.kill /* jjp == TRUE */ )
+        IF ( !exists( father ) or father.kill )
             BREAK;
         END
         FRAME;
@@ -17674,7 +17477,7 @@ BEGIN
     REPEAT
         FRAME;
         kill = !exists( father ) or father.kill;
-    UNTIL ( kill /* jjp == TRUE */ )
+    UNTIL ( kill )
 END
  //Anim2
 //PROCESS Destroy_Them_All();
@@ -17729,7 +17532,7 @@ BEGIN
                 b_clicked = FALSE;
             END
         END
-        IF ( b_clicked /* jjp == TRUE */ )
+        IF ( b_clicked )
             GRAPH = b_grf + 2; //left mouse clicked
             //b_selected = TRUE;
             IF ( b_selected == FALSE OR( but_type == bt_click_hold AND click_hld_del == 0 )) //check for click hold
@@ -17778,13 +17581,13 @@ BEGIN
         mse_id = collision( type mouse );
         //Shortcut Key
         IF ( key_to_read != 0 )
-            IF ( key( key_to_read ) AND b_released /* jjp == TRUE */ )
+            IF ( key( key_to_read ) AND b_released )
                 b_clicked = TRUE;
                 b_released = FALSE;
             END
         END
         //Mouse click
-        IF ( mse_id != 0 AND mouse.left AND b_released /* jjp == TRUE */ )
+        IF ( mse_id != 0 AND mouse.left AND b_released )
             b_clicked = TRUE;
             b_released = FALSE;
         ELSE
@@ -17808,7 +17611,7 @@ BEGIN
             END
         END
         //Process toggle button graphic and update vars
-        IF ( b_clicked /* jjp == TRUE */ )
+        IF ( b_clicked )
             IF ( b_selected == FALSE )
                 b_selected = TRUE;
                 GRAPH = b_grf + 2; //left mouse clicked
@@ -17835,7 +17638,7 @@ BEGIN
                 do_bgrounds = FALSE;
             END
             if ( beh_ids[ 0 ] ) write_delete( beh_ids[ 0 ] ); end
-            IF ( do_bgrounds /* jjp == TRUE */ ) //graphics behind the screen on scroll plane 2
+            IF ( do_bgrounds ) //graphics behind the screen on scroll plane 2
                 beh_ids[ 0 ] = Write( font_ed, ret_xtext( 8 ) + 8, ret_ytext( 5 ), 3, "On" );
             ELSE
                 beh_ids[ 0 ] = Write( font_ed, ret_xtext( 8 ) + 8, ret_ytext( 5 ), 3, "Off" );
@@ -17857,7 +17660,7 @@ BEGIN
         END
         CASE but_Sound_Dis: //Disable/Enable Sound process
             if ( beh_ids[ 2 ] ) write_delete( beh_ids[ 2 ] ); end
-            IF ( do_sound /* jjp == TRUE */ )
+            IF ( do_sound )
                 IF ( music_is_playing() )
                     music_stop();
                 END
@@ -17924,7 +17727,7 @@ BEGIN
             END
         END
         CASE but_lives_Up:
-            IF ( Start_lives < 5 OR cheat_mode /* jjp == TRUE */ )
+            IF ( Start_lives < 5 OR cheat_mode )
                 Start_lives++;
             END
         END
@@ -18105,7 +17908,7 @@ BEGIN
         END
         CASE but_Trap_Dino:
             if ( beh_ids[ 11 ] ) write_delete( beh_ids[ 11 ] ); end
-            IF ( trap_player /* jjp == TRUE */ ) //can trap other player in a bubble like a nastie.
+            IF ( trap_player ) //can trap other player in a bubble like a nastie.
                 trap_player = FALSE;
                 beh_ids[ 11 ] = Write( font_ed, ret_xtext( 11 ) -8, ret_ytext( 17 ), 3, "No" );
             ELSE
@@ -18195,7 +17998,7 @@ BEGIN
             bub_del = 0;
         END
         bub_del++;
-        IF ( kill /* jjp == TRUE */ OR tscreen_adv /* jjp == TRUE */ )
+        IF ( kill OR tscreen_adv )
             BREAK;
         END
         FRAME;
@@ -18255,7 +18058,7 @@ BEGIN
             END
         END
         FRAME;
-    UNTIL ( kill /* jjp == TRUE */ OR tscreen_adv /* jjp == TRUE */ )
+    UNTIL ( kill OR tscreen_adv )
 END
 
 
@@ -18275,6 +18078,8 @@ BEGIN
     scroll.ratio=100.0;
     scroll.speed=0;
     scroll.follow=-1;
+    scroll.region1=1;
+    scroll.region2=1;
 
     ids[ 0 ] = Rand_Pop_Bubs( 50, 30, 50, lv_title ); //rand freq, rand start delay ,end delay
     ids[ 1 ] = Rand_Pop_Bubs( 50, 60, 100, lv_title );
@@ -18475,7 +18280,7 @@ BEGIN
         IF ( Scroll_Txt[ t_loc ].txt_fnt == l_feed ) //line feed down the screen by number in txt_x
             y += Scroll_Txt[ t_loc ].txt_x; //holds how many line feeds to do
         ELSE
-            IF ( Scroll_Txt[ t_loc ].txt_line_feed /* jjp == TRUE */ ) //end of line - if false it stays on this x line to do more text
+            IF ( Scroll_Txt[ t_loc ].txt_line_feed ) //end of line - if false it stays on this x line to do more text
                 y++;
             END
         END
@@ -18500,7 +18305,7 @@ BEGIN
             t_loc++;
         UNTIL ( t_loc >= sc_txt_num )
         FRAME( 200 );
-        IF ( kill /* jjp == TRUE */ )
+        IF ( kill )
             BREAK;
         END
     END
