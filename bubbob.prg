@@ -1974,7 +1974,7 @@ LOCAL //all these are used by the main and processes running into them
     int b_selected;
 end
 
-DECLARE function DS_Adv_To_Main_Check();
+DECLARE PROCESS DS_Adv_To_Main_Check();
 DECLARE PROCESS DS_Animation(); 
 DECLARE PROCESS T_Anim( double x, y, int st_frm, an_frames, del );
 DECLARE PROCESS D_Anim( a_ind );
@@ -2374,10 +2374,10 @@ end
 
 //Check for space to advance to main title screen
 
-function DS_Adv_To_Main_Check()
+PROCESS DS_Adv_To_Main_Check()
 BEGiN
     LOOP
-        IF ( key( _space ))
+        IF ( key( _ESC ))
             BREAK;
         END
         IF ( level_type == lv_title )
@@ -2406,7 +2406,7 @@ PRIVATE
     int n_anim;
     int a_del;
 BEGIN
-#if 1 // jjp
+#if 0 // jjp
 signal( type P_Anim, s_kill );
 tscreen_adv = TRUE;
 s_trigger[ e_life ] = TRUE;
@@ -3408,7 +3408,7 @@ BEGIN
     ///*
     //Games intro animation
 
-#if 0 // jjp
+#if 1 // jjp
     intro_finished = FALSE; //made true by the intro process when it finishes
 
     Do_Intro_Screen(); //the amount of players currently starting the game will be checked with "players_joining"
