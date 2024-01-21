@@ -1,16 +1,8 @@
-# DIV-BubbleBobble
-Bubble Bobble remake in DIV Games Studio 2
+# BGD2-BubbleBobble
+Bubble Bobble remake port for Bennu Game Development 2 (Original version in DIV Games Studio 2)
+
+BGD2 port and fixes by SplinterGU in 2024
 
 Made by Paul Darby in 2003 / 2004
 
-Uploaded to github for all to enjoy
-
-Play this game online
-
-http://js.mikedx.co.uk/bbobble.html
-
-Load and run this game with DIV Games studio
-http://div-arena.co.uk
-
-Paul if you ever see this, please get in touch!
-
+For info of original code visit https://github.com/MikeDX/DIV-BubbleBobble
