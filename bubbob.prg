@@ -1410,16 +1410,21 @@ GLOBAL
         "Jump",
         "Fire",
         "Exit";
+    
     //Auto Movement of Dinos for Demo and Extend Levels
+    
     //    mv_wait  = 0;
     //    mv_left  = 1;
     //    mv_right = 2;
     //    mv_jump  = 3;
     //    mv_fire  = 4;
     //    mv_exit  = 5; //exit the auto play
+    
     //used for seeing where the autoplayers are for the instr level and extend screens
-    int auto_loc1;
-    int auto_loc2;
+    
+    int auto_loc1 = 0;
+    int auto_loc2 = 0;
+    
     STRUCT autoplay1[ 100 ];
         int32 arr_ind_loc;
         int32 time_on;
@@ -2026,7 +2031,7 @@ DECLARE PROCESS Flash_text( st_arr, end_arr );
 DECLARE PROCESS Text_Writer( txt_id, text_type );
 DECLARE PROCESS Del_Scr_Text( arr_pos );
 DECLARE PROCESS Resort_txtarr( text_loc, del_n_lines );
-DECLARE PROCESS Clear_Txt_array();
+DECLARE FUNCTION Clear_Txt_array();
 DECLARE PROCESS Instruction_Level();
 DECLARE PROCESS Record_Demo( plr );
 DECLARE PROCESS Auto_Play( plr );
@@ -2176,7 +2181,7 @@ DECLARE PROCESS Player_Lives( plr_num );
 DECLARE PROCESS Kill_Player2( plr, id2 );
 DECLARE PROCESS Kill_Player( plr, id2 );
 DECLARE PROCESS Reset_Player( plr ); 
-DECLARE PROCESS Player_Alive( player );
+DECLARE FUNCTION Player_Alive( player );
 DECLARE PROCESS Players_Start();
 DECLARE PROCESS Ret_who( theid );
 DECLARE PROCESS Ret_dino_player( theid );
@@ -2194,7 +2199,7 @@ DECLARE PROCESS Get_Hard_Col();
 DECLARE PROCESS XColFind( xst, yst );
 DECLARE PROCESS XBlockFind( xst, yst );
 DECLARE PROCESS YColFind( xst, yst );
-DECLARE function Extend_Demo_Level();
+DECLARE FUNCTION Extend_Demo_Level();
 DECLARE PROCESS Next_Level();
 DECLARE PROCESS Copy_To_Maps();
 DECLARE PROCESS Background_Draw( yloc );
@@ -2217,7 +2222,7 @@ DECLARE PROCESS Extend_bubble( xloc, yloc, bub_number );
 DECLARE PROCESS Twinkle( xloc, yloc, an_start );
 DECLARE PROCESS Hiscore_Cheats( hi_loc );
 DECLARE PROCESS Check_Score();
-DECLARE function Dis_Non_Enter_Score();
+DECLARE FUNCTION Dis_Non_Enter_Score();
 DECLARE PROCESS Enter_Score( plr_in, in_score );
 DECLARE PROCESS Setupchars();
 DECLARE PROCESS Update_HiScore( hi_loc, in_level, in_score );
@@ -2385,7 +2390,7 @@ BEGiN
         END
         FRAME;
     END
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end;
     clear_screen();
     //Kill all processes associated with the start prog titles
     signal( type DS_Animation, s_kill );
@@ -2406,7 +2411,7 @@ PRIVATE
     int n_anim;
     int a_del;
 BEGIN
-#if 0 // jjp
+#if 0 // jjp disable initial animation for fast test
 signal( type P_Anim, s_kill );
 tscreen_adv = TRUE;
 s_trigger[ e_life ] = TRUE;
@@ -2482,7 +2487,7 @@ return;
         END
         FRAME;
     END
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
     signal( type P_Anim, s_kill );
     tscreen_adv = TRUE;
     s_trigger[ e_life ] = TRUE;
@@ -2707,22 +2712,14 @@ PRIVATE
     int show;
     int pid;
 BEGIN
-    WHILE ( ( pid = get_id( type Pause_game ) ) )
-        IF ( pid.id != pid )
-            RETURN;
-        END
+    IF ( get_id( type Pause_game ) )
+        RETURN;
     END
+
+    text.z = text.z - 1;
     //Text to screen GAME PAUSED
     pause_id = write( font_s, ret_xtext( 16 ), ret_ytext( 13 ), 4, "GAME PAUSED" );
-    //Store timers for level/game and bubble delays
-    time_3 = timer[ 3 ];
-    time_4 = timer[ 4 ];
-    //Level events to sleep
-    signal( type Level_Events, s_sleep );
-    signal( type Food, s_freeze );
-    signal( type Item, s_freeze );
-    //stop all the sprites
-    level_stop_what = stop_everything;
+
     //Wait until space is pressed
     REPEAT
         d_time++;
@@ -2745,15 +2742,8 @@ BEGIN
         FRAME;
     UNTIL ( kill )
     write_delete( pause_id );
-    //restore timers
-    timer[ 3 ] = time_3;
-    timer[ 4 ] = time_4;
-    //wake up level events
-    signal( type Level_Events, s_wakeup );
-    signal( type Food, s_wakeup );
-    signal( type Item, s_wakeup );
-    //start moving all the sprites again
-    level_stop_what = stop_nothing;
+
+    text.z = text.z + 1;
 END
 
 //Dino enter coin dino board
@@ -2929,47 +2919,52 @@ BEGIN
     LOOP
         FOR ( plr = 0; plr <= 1; plr++ )
             //USE Keys
-            IF ( player_keys_joy[ plr ] == Use_Keys )
+//            IF ( player_keys_joy[ plr ] == Use_Keys )
                 //Left
-                IF ( key( userdefkeys[ plr ].pl_l ))
-                    keys_pressed[ plr ].pl_left = TRUE;
-                ELSE
-                    keys_pressed[ plr ].pl_left = FALSE;
-                END
+                keys_pressed[ plr ].pl_left = key( userdefkeys[ plr ].pl_l );
                 //Right
-                IF ( key( userdefkeys[ plr ].pl_r ))
-                    keys_pressed[ plr ].pl_right = TRUE;
-                ELSE
-                    keys_pressed[ plr ].pl_right = FALSE;
-                END
+                keys_pressed[ plr ].pl_right = key( userdefkeys[ plr ].pl_r );
                 //Jump
-                IF ( key( userdefkeys[ plr ].pl_j ))
-                    keys_pressed[ plr ].pl_jump = TRUE;
-                ELSE
-                    keys_pressed[ plr ].pl_jump = FALSE;
-                END
+                keys_pressed[ plr ].pl_jump = key( userdefkeys[ plr ].pl_j );
+
                 //Fire
                 IF ( bubbob[ plr ].autofire == FALSE )
-                    IF ( key( userdefkeys[ plr ].pl_f ))
-                        keys_pressed[ plr ].pl_fire = TRUE;
-                    ELSE
-                        keys_pressed[ plr ].pl_fire = FALSE;
-                        bubbob[ plr ].bubrel = TRUE;
-                    END
-                    IF ( bubbob[ plr ].bubrel AND keys_pressed[ plr ].pl_fire )
-                        bubbob[ plr ].bubkey = TRUE;
-                        bubbob[ plr ].bubrel = FALSE;
-                    END
+                    bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire = key_down( userdefkeys[ plr ].pl_f );
                 ELSE //Do Autofire
-                    IF ( key( userdefkeys[ plr ].pl_f ))
-                        keys_pressed[ plr ].pl_fire = TRUE;
-                        bubbob[ plr ].bubkey = TRUE;
-                    ELSE
-                        keys_pressed[ plr ].pl_fire = FALSE;
-                        bubbob[ plr ].bubrel = TRUE;
-                        bubbob[ plr ].bubkey = FALSE;
-                    END
+                    bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire = key( userdefkeys[ plr ].pl_f );
                 END
+                bubbob[ plr ].bubrel = !bubbob[ plr ].bubkey;
+
+
+
+
+
+
+/*
+
+        int joy = joy_query( JOY_QUERY_FIRST_ATTACHED );
+
+        if ( joy != -1 )
+            jkeys_state[ _JKEY_UP        ] |= joy_query( joy, JOY_BUTTON_DPAD_UP      ) || joy_query( joy, JOY_AXIS_LEFTY ) < -16384;
+            jkeys_state[ _JKEY_LEFT      ] |= joy_query( joy, JOY_BUTTON_DPAD_LEFT    ) || joy_query( joy, JOY_AXIS_LEFTX ) < -16384;
+            jkeys_state[ _JKEY_DOWN      ] |= joy_query( joy, JOY_BUTTON_DPAD_DOWN    ) || joy_query( joy, JOY_AXIS_LEFTY ) > 16383;
+            jkeys_state[ _JKEY_RIGHT     ] |= joy_query( joy, JOY_BUTTON_DPAD_RIGHT   ) || joy_query( joy, JOY_AXIS_LEFTX ) > 16383;
+            jkeys_state[ _JKEY_MENU      ] |= joy_query( joy, JOY_BUTTON_BACK         );
+            jkeys_state[ _JKEY_SELECT    ] |= joy_query( joy, JOY_BUTTON_START        );
+            jkeys_state[ _JKEY_A         ] |= joy_query( joy, JOY_BUTTON_A            );
+            jkeys_state[ _JKEY_B         ] |= joy_query( joy, JOY_BUTTON_B            );
+            jkeys_state[ _JKEY_X         ] |= joy_query( joy, JOY_BUTTON_X            );
+            jkeys_state[ _JKEY_Y         ] |= joy_query( joy, JOY_BUTTON_Y            );
+        end
+*/
+
+
+
+
+
+
+
+
 #if 0
             ELSE //Use Joystick
 // jjp
@@ -3023,7 +3018,7 @@ BEGIN
                     END
                 END
 #endif
-            END
+//            END
         END //Player Keys Loop
 
         timer[ 0 ] = 0;
@@ -3071,7 +3066,21 @@ BEGIN
                 END
             END
         END
-        IF ( ( level_type == lv_normal OR level_type == lv_boss ) AND game_state == gs_level_go )
+        IF ( (  level_type == lv_normal OR
+                level_type == lv_extend OR
+                level_type == lv_secret OR
+                level_type == lv_potion OR
+                level_type == lv_boss 
+             )
+             AND 
+             (
+                game_state == gs_adv_level OR
+                game_state == gs_level_setup OR
+                game_state == gs_level_start OR
+                game_state == gs_level_next_timer OR
+                game_state == gs_level_go
+             )
+           )
             //Player join running game
             IF ( key_down( _1 ) AND bubbob[ 0 ].sprite_id == 0 AND Credits > 0 )
                 Credits--; //Use Up a coin
@@ -3084,8 +3093,10 @@ BEGIN
             IF ( key_down( _F8 ))
                 int pause_id = get_id( type Pause_Game );
                 if ( !pause_id )
+                    pause();
                     Pause_Game();
                 else
+                    resume();
                     pause_id.kill = 1;
                 end
             END
@@ -3408,7 +3419,6 @@ BEGIN
     ///*
     //Games intro animation
 
-#if 1 // jjp
     intro_finished = FALSE; //made true by the intro process when it finishes
 
     Do_Intro_Screen(); //the amount of players currently starting the game will be checked with "players_joining"
@@ -3424,7 +3434,6 @@ BEGIN
         END
         FRAME;
     UNTIL ( intro_finished ) //its finished with the start animation (clear bubbles dinos etc)
-#endif
 
     //*/
 
@@ -3499,7 +3508,7 @@ END
 FUNCTION Main_Logic()
 BEGIN
     tscreen_adv = FALSE;
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
     write_delete( all_text );
     IF ( cur_tscreen != t_start_prog )
         Score_Displays();
@@ -3526,7 +3535,7 @@ BEGIN
             signal( type rand_pop_bubs, s_kill );
             write( font_s, ret_xtext( 16 ), ret_ytext( 13 ), 4, "INSERT COIN" );
             Auto_adv_after( 2 );
-            fade_on(500); while(fade_info.fading) FRAME; end; 
+            while(fade_info.fading) FRAME; end; fade_on(500); while(fade_info.fading) FRAME; end; 
         END
         CASE t_demo_instr: //Intruction level
             Instruction_Level();
@@ -3543,7 +3552,7 @@ BEGIN
                 tscreen_adv = TRUE; //When set to true it advances to the next title screen, and so goes to the main titles
                 cur_tscreen = t_start_prog;
             ELSE
-                dis_non_enter_score();
+                Dis_Non_Enter_Score();
             END
         END
         CASE t_options:
@@ -3568,6 +3577,7 @@ BEGIN
         END
         CASE t_start_game: //start the game
             signal( type Level_Reached_adv, s_kill_tree );
+            signal( type Food, s_kill );
             Game_loop();
         END
         CASE t_hiscre_ent:
@@ -3583,7 +3593,7 @@ BEGIN
             write( font_s, ret_xtext( 16 ), ret_ytext( 13 ), 4, "GAME OVER" );
             s_trigger[ e_gameover ] = TRUE;
             while(fade_info.fading) FRAME; end; fade_on(500);
-            auto_adv_after( 2 );
+            Auto_Adv_After( 2 );
         END
         CASE t_exit_prog:
             Write( font_s, ret_xtext( 16 ), ret_ytext( 13 ), 4, "QUIT BUBBLE BOBBLE Y/N ?" );
@@ -4383,7 +4393,7 @@ BEGIN
         IF ( titles_timer >= 21 ) //21 Title changing text going to loop
             //IF (titles_timer >= 5) //21 Title changing text going to loop
             //tscreen_adv = TRUE;
-            while(fade_info.fading) FRAME; end; fade_off(500);
+            fade_off(500); while(fade_info.fading) FRAME; end; 
             cur_tscreen = t_insert_coin;
             Main_logic();
             titles_timer = 0;
@@ -4543,7 +4553,6 @@ BEGIN
         END
         FRAME;
     END
-    while(fade_info.fading) FRAME; end; fade_off(500);
     write_delete( all_text );
     score_displays();
 END
@@ -4752,7 +4761,7 @@ END
 
 //Clears text array for a new screen
 
-PROCESS Clear_Txt_array()
+FUNCTION Clear_Txt_array()
 PRIVATE
     int del_loc;
 BEGIN
@@ -4794,8 +4803,6 @@ BEGIN
     scroll.region1=1;
     scroll.region2=1;
 
-    //   scroll.y0 += 2; //adjustment as main title's scrollplane messes this one up
-    //   scroll.y1 += 1;
     level_type = lv_instr;
     Extend_Demo_Level();
     game_state = gs_level_setup;
@@ -4915,6 +4922,7 @@ BEGIN
     REPEAT
         FRAME;
     UNTIL ( game_state == gs_level_go )
+
     //Read the time to start auto play
     IF ( plr == 0 )
         auto_loc1 = 0; //global plr1 place in the autoplay arrays
@@ -5222,7 +5230,7 @@ PRIVATE
     int rot_id;
 BEGIN
     //Fade Screen
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
 
     //delete score text from screen
     write_delete( all_text );
@@ -5791,12 +5799,14 @@ BEGIN
         END
         FRAME;
     END
-    while(fade_info.fading) FRAME; end; fade_off(500);
 
+    fade_off(500); while(fade_info.fading) FRAME; end; 
+    
     //get rid off static animations
     signal( type Static_Anim, s_kill );
+    
+    fade_on(500);
 
-    while(fade_info.fading) FRAME; end; fade_on(500);
     //kill the rotate pallette process
     id3 = get_id( type rotate_palette );
     if ( id3 ) id3.kill = TRUE; end
@@ -5813,9 +5823,10 @@ BEGIN
     END
     //Kill the scroller, which clears the scroll array as well
     signal( type Scroll_the_text, s_kill );
+
     //Fade The Screen
-    while(fade_info.fading) FRAME; end; fade_off(500);
-    while(fade_info.fading) FRAME; end
+    fade_off(500); while(fade_info.fading) FRAME; end; 
+
     Do_keys();
     //Rest the game variables and advance to enter score screen
     Game_End_Reset();
@@ -12068,7 +12079,7 @@ PRIVATE
     int door2;
     int torchids[ 1 ];
 BEGIN
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
     IF (( cur_level MOD 2 ) == 0 )
         drawloc = 512;
         //       drawloc2 = 80;
@@ -14368,7 +14379,7 @@ END
 //TRUE =  Alive
 //FALSE = Dead
 
-PROCESS Player_Alive( player )
+FUNCTION Player_Alive( player )
 BEGIN
     IF ( bubbob[ player ].sprite_id != 0 AND bubbob[ player ].lives > 0 )
         RETURN ( TRUE );
@@ -15583,14 +15594,14 @@ END
 //    demo_plat     = 902; //demo screen hardness map
 //    extend_plat   = 904; //extend room hardness map
 
-function Extend_Demo_Level()
+FUNCTION Extend_Demo_Level()
 PRIVATE
     int drawcount;
     int block; //for the graphics for these screens
     int new_h_map; //to locate hardness maps for these 2 screens
     int this_draw_loc; //this procedures draw location we dont want to destroy the main global
 BEGIN
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
     //IF (doing_effect[pri_1] != e_normal)
     //   s_trigger[e_normal] = TRUE;
     //END
@@ -15647,7 +15658,7 @@ BEGIN
     map_put( blocksfile, scr_graf, blocksfile, 2, 0, 0 );
     map_put( blocksfile, scr_graf, blocksfile, 2, 0, 464 );
 
-    while(fade_info.fading) FRAME; end; fade_on(500);
+    fade_on(500);
 END
  //Extend Demo screen draw
 //    plt_hrd = 800; //platform hardness map loc
@@ -15674,8 +15685,7 @@ BEGIN
     signal( type food, s_kill );
     IF ( level_type == lv_secret OR level_type == lv_extend )
         noscrolldraw = TRUE;
-        while(fade_info.fading) FRAME; end; fade_off(500);
-        while(fade_info.fading) FRAME; end
+        fade_off(500); while(fade_info.fading) FRAME; end; 
         from_ext_secret = TRUE;
         level_type = lv_normal;
     END
@@ -15763,7 +15773,6 @@ BEGIN
         //End Scroll
         IF ( from_ext_secret ) //(level_type == lv_secret OR level_type == lv_extend)
             while(fade_info.fading) FRAME; end; fade_on(500);
-            while(fade_info.fading) FRAME; end
             s_trigger[ e_normal ] = TRUE;
         END
         IF ( noscrolldraw )
@@ -16404,7 +16413,7 @@ PRIVATE
     int timer_er; //sometimes all the bubbles dont get popped
 BEGIN
     //fade off
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
     level_stop_what = stop_nothing;
     //sleep dinos
     IF ( Player_Alive( 0 ) )
@@ -16464,6 +16473,7 @@ BEGIN
     ELSE
         drawloc = 16;
     END
+
     FOR ( count = 0; count < 300; count++ )
         rndx = rand( 0, block_res * 28 );
         rndy = rand( 0, block_res * 24 );
@@ -16549,7 +16559,7 @@ BEGIN
         END
         FRAME;
     END
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
     //Adjustment of scroll plane 2 to be correct when level advances
     scroll.y1 += 462;
     signal_if_exists( nice_id, s_kill );
@@ -16788,7 +16798,7 @@ BEGIN
     hi_loc2 = find_hisc_loc( bubbob[ 1 ].score );
     bubble_alldie = TRUE; //kill all bubbles
     IF ( hi_loc1 == hisc_terminator AND hi_loc2 == hisc_terminator )
-        Dis_non_enter_score();
+        Dis_Non_Enter_Score();
     ELSE
         while(fade_info.fading) FRAME; end; fade_on(500);
         //One player has a high score
@@ -16797,7 +16807,7 @@ BEGIN
         //    rbub_random rbub_strobe rbub_white
         id_kill = Bubble_Spitter_2( rbub_strobe ); //to kill the bubbles when score has been entered
         IF ( hi_loc1 != hisc_terminator )
-            enter_score( 1, bubbob[ 0 ].score ); //enter score process for player 1
+            Enter_Score( 1, bubbob[ 0 ].score ); //enter score process for player 1
             //Wait till player 1s score has been entered
             LOOP
                 IF ( kill )
@@ -16851,7 +16861,7 @@ BEGIN
 END
 
 
-function Dis_Non_Enter_Score();
+FUNCTION Dis_Non_Enter_Score();
 PRIVATE
     int hi_loc; //how many in the char table
 BEGIN
@@ -16874,7 +16884,7 @@ BEGIN
         ypos += 2;
     END
     while(fade_info.fading) FRAME; end; fade_on(500);
-    auto_adv_after( 5 ); //secs_till next screen
+    Auto_Adv_After( 5 ); //secs_till next screen
 END
 
 
@@ -17166,7 +17176,7 @@ BEGIN
             BREAK;
         END
     END
-    while(fade_info.fading) FRAME; end; fade_off(500);
+    fade_off(500); while(fade_info.fading) FRAME; end; 
     clear_screen();
     write_delete( txt );
     IF ( txt_1 != 0 )
