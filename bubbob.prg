@@ -1673,9 +1673,9 @@ GLOBAL
         23, 22, //10 Original code graphics by
         25, 23, //11 From the orignal arcade game by
         26, 25, //12 Dev using
-        27, 26, //13 123 keys
-        30, 27, //R J
-        31, 30; //F9 F10 ESC
+        27, 26, // BennuGD2 Port
+        29, 27, //13 123R keys
+        32, 29; //F9 F10 ESC
     STRUCT Game_Text[ 50 ]
         int txt_x; //measured in blocks not pixels
         int txt_y;
@@ -1723,15 +1723,16 @@ GLOBAL
 
         9, 19, f_silver, "DEVELOPED USING", FALSE, //26
 
-        8, 19, f_silver, "1 .... 1 PLAYER  START", TRUE, //27
-        8, 21, f_silver, "2 .... 2 PLAYER  START", TRUE, //28
-        8, 23, f_silver, "3 .... ENTER  COIN", FALSE, //29
+        8, 19, f_silver, "2024 BENNUGD2 PORT", TRUE, //27
+        10, 21, f_silver, "BY SPLINTERGU", FALSE, //28
 
-        8, 19, f_silver, "R .... REDEFINE  KEYS", FALSE, //30
+        6, 19, f_silver, "1/2 .... 1/2 PLAYER  START", TRUE, //29
+        8, 21, f_silver, "3 .... ENTER  COIN", TRUE, //30
+        8, 23, f_silver, "R .... REDEFINE  KEYS", FALSE, //31
 
-        6, 19, f_silver, "K      .... VIEW  GAME  KEYS", TRUE, //31
-        6, 21, f_silver, "F10 .... OPTIONS  SCREEN", TRUE, //32
-        6, 23, f_silver, "Q      .... QUIT  GAME/PROGRAM", FALSE; //33
+        6, 19, f_silver, "K      .... VIEW  GAME  KEYS", TRUE, //32
+        6, 21, f_silver, "F10 .... OPTIONS  SCREEN", TRUE, //33
+        6, 23, f_silver, "Q      .... QUIT  GAME/PROGRAM", FALSE; //34
 
     // FROM THE ARCADES
     // A TRIBUTE TO THE TAITO CLASSIC
@@ -2276,7 +2277,7 @@ BEGIN
     IF ( !joy_query( joy_plr[ 1 ], JOY_QUERY_ATTACHED ) ) joy_plr[ 1 ] = -1; end
 
     FOR( int plr = 0; plr <= 1; plr++ )
-        IF ( joy_plr[ plr ] == -1 )
+        IF ( joy_plr[ plr ] == -1 && Player_Alive( plr ) )
             FOR ( int i = 0; i < 16; i++ )
                 IF ( i != joy_plr[ plr^1 ] && joy_query( i, JOY_QUERY_ATTACHED ) )
                     joy_plr[ plr ] = i;
@@ -16763,6 +16764,7 @@ PRIVATE
     int y_enter_pos; //where on the screen to dump the gold initials
     int lev_plr_reached;
     int key_plr; //to read different keys of the players from the do_key() process
+    int fire_pressed = 1;
 BEGIN
     key_plr = plr_in - 1;
     ypos = ystpos;
@@ -16843,29 +16845,31 @@ BEGIN
             END
 
             txt_mov = FALSE;
-            //Key press left
-            IF ( keys_pressed[ key_plr ].pl_left )
-                txt_loc--;
-                txt_mov = TRUE;
-                timer[ 9 ] = 0; while( keys_pressed[ key_plr ].pl_left && timer[ 9 ] < 10 ) frame; end //delay movement or its impossible to select what you need
-            END
-            IF ( keys_pressed[ key_plr ].pl_right )
-                txt_loc++;
-                txt_mov = TRUE;
-                timer[ 9 ] = 0; while( keys_pressed[ key_plr ].pl_right && timer[ 9 ] < 10 ) frame; end //delay movement or its impossible to select what you need
-            END
 
-            txt_loc = wrap( txt_loc, 0, hi_many - 1 );
-
-            if ( txt_mov )
-                IF ( entered >= num_to_enter )
-                    txt_loc = wrap( txt_loc, MIN( txt_end, txt_rub ), MAX( txt_end, txt_rub ) );
+            IF ( timer[ 9 ] > 10 )
+                //Key press left
+                IF ( keys_pressed[ key_plr ].pl_left )
+                    txt_loc--;
+                    txt_mov = TRUE;
+                    timer[ 9 ] = 0; 
                 END
-            end
+
+                IF ( keys_pressed[ key_plr ].pl_right )
+                    txt_loc++;
+                    txt_mov = TRUE;
+                    timer[ 9 ] = 0; 
+                END
+            END
+
+            IF ( entered >= num_to_enter )
+                txt_loc = wrap( txt_loc, MIN( txt_end, txt_rub ), MAX( txt_end, txt_rub ) );
+            ELSE
+                txt_loc = wrap( txt_loc, 0, hi_many - 1 );
+            END
 
             txt_last = 0;
             //ENTER! - Select Char key Pressed so store
-            IF ( keys_pressed[ key_plr ].pl_fire )
+            IF ( !fire_pressed && keys_pressed[ key_plr ].pl_fire )
                 IF ( txt_loc == txt_rub ) //rub text from array and screen
                     IF ( entered > 0 )
                         entered--;
@@ -16877,16 +16881,17 @@ BEGIN
                         txt_last = txt_end;
                         write_delete( txt_id ); //remove text and update screen
                     ELSE
-                        hs_table[ hi_loc ].h_name += chr( hi_chars[ txt_loc ] ); //add char to highscore table name
-                        entered++; //number chars entered increase by one
-                        xpos++; //cursor location update
+                        IF ( entered < num_to_enter )
+                            hs_table[ hi_loc ].h_name += chr( hi_chars[ txt_loc ] ); //add char to highscore table name
+                            entered++; //number chars entered increase by one
+                            xpos++; //cursor location update
+                        END                        
                         txt_last = txt_loc; // to check if we have entered the end to quit entering initials
                         IF ( entered == num_to_enter )
                             txt_loc = txt_end;
                         END
                     END
                 END
-                timer[ 9 ] = 0; while( keys_pressed[ key_plr ].pl_fire && timer[ 9 ] < 10 ) frame; end //delay movement or its impossible to select what you need
             END
 
             write_delete( txt_id ); //remove text and update screen
@@ -16895,6 +16900,8 @@ BEGIN
             txt_id = write( font_s, ret_xtext( xpos ), ret_ytext( ypos ), 3, hi_chars[ txt_loc ] );
             //score table name
             txt_id2 = write( font_s, ret_xtext( xst ), ret_ytext( ypos ), 3, hs_table[ hi_loc ].h_name );
+
+            fire_pressed = keys_pressed[ key_plr ].pl_fire;
 
             FRAME;
         UNTIL ( txt_last == txt_end )
