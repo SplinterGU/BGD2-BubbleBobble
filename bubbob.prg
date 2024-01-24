@@ -397,9 +397,6 @@ CONST
     ds_sp_dis = 226;
     st_remake = 17;
     //GAME SETUP AND ITTERATION CONSTANTS
-    //Keys or Joystick
-    Use_Keys = 0;
-    Use_Joy = 1;
     //Hiscore
     hisc_items = 5;
     xstpos = 5; //hi score table starting positions
@@ -422,7 +419,6 @@ CONST
     //game level types
     lv_title = 1;
     lv_redefine = 2;
-    lv_joystick = 2;
     lv_options = 3;
     lv_cheat = 4;
     lv_show_k = 5;
@@ -473,13 +469,12 @@ CONST
     t_options = 7;
     t_cheat = 8;
     t_redefine_k = 9;
-    t_joystick = 10;
-    t_game_keys = 11;
-    t_start_game = 12;
-    t_hiscre_ent = 13;
-    t_lev_reachd2 = 14;
-    t_game_over = 15;
-    t_exit_prog = 16;
+    t_game_keys = 10;
+    t_start_game = 11;
+    t_hiscre_ent = 12;
+    t_lev_reachd2 = 13;
+    t_game_over = 14;
+    t_exit_prog = 15;
     //Text Types
     t_norm = 0;
     t_flash = 1;
@@ -941,10 +936,6 @@ GLOBAL
     int bg_block_grf;
     int noscrolldraw; //to not scroll the first screen or after a extend or for/after a treasure room
     //False = Scroll, True = No Scroll
-    //Use Keys or Joystick
-    int player_keys_joy[ 1 ];
-    int player_joy_jump[ 1 ]; //Joy Up or button 1-4
-    int player_joy_fire[ 1 ]; //1-4
     //Save Game Settings from here
     int32 frm_rate; //Game frame rate
     int frm_skip; //Game frame skip
@@ -1269,7 +1260,6 @@ GLOBAL
         50000, 250000, 500000;
     int Secret_R_Done[ 4 ]; //Secret room displayed?
     int bosspotion[ 1 ]; //Boss potions
-    string Joy_Text[ 4 ] = "JOYSTICK UP", "BUTTON 1", "BUTTON 2", "BUTTON 3", "BUTTON 4";
     string Game_diff_Text[ 3 ] = "Easy", "Normal", "Hard", "Very Hard";
     //ITEMS Collected
     STRUCT spec_Items[ num_items ]
@@ -1411,6 +1401,9 @@ GLOBAL
         "Fire",
         "Exit";
     
+
+    int joy_plr[1] = -1, -1;
+
     //Auto Movement of Dinos for Demo and Extend Levels
     
     //    mv_wait  = 0;
@@ -1682,7 +1675,7 @@ GLOBAL
         26, 25, //12 Dev using
         27, 26, //13 123 keys
         30, 27, //R J
-        32, 30; //F9 F10 ESC
+        31, 30; //F9 F10 ESC
     STRUCT Game_Text[ 50 ]
         int txt_x; //measured in blocks not pixels
         int txt_y;
@@ -1734,12 +1727,11 @@ GLOBAL
         8, 21, f_silver, "2 .... 2 PLAYER  START", TRUE, //28
         8, 23, f_silver, "3 .... ENTER  COIN", FALSE, //29
 
-        8, 19, f_silver, "R .... REDEFINE  KEYS", TRUE, //30
-        8, 21, f_silver, "J .... JOYSTICK  SELECT", FALSE, //31
+        8, 19, f_silver, "R .... REDEFINE  KEYS", FALSE, //30
 
-        6, 19, f_silver, "K      .... VIEW  GAME  KEYS", TRUE, //32
-        6, 21, f_silver, "F10 .... OPTIONS  SCREEN", TRUE, //33
-        6, 23, f_silver, "Q      .... QUIT  GAME/PROGRAM", FALSE; //34
+        6, 19, f_silver, "K      .... VIEW  GAME  KEYS", TRUE, //31
+        6, 21, f_silver, "F10 .... OPTIONS  SCREEN", TRUE, //32
+        6, 23, f_silver, "Q      .... QUIT  GAME/PROGRAM", FALSE; //33
 
     // FROM THE ARCADES
     // A TRIBUTE TO THE TAITO CLASSIC
@@ -1807,7 +1799,6 @@ GLOBAL
         t_title_main, //t_options    7
         t_options, //t_cheat
         t_title_main, //t_redefine_k
-        t_title_main, //t_joysick
         t_title_main, //t_ingame_keys
         t_hiscre_ent, //t_start_game
         t_lev_reachd2, //t_hiscre_ent
@@ -1944,6 +1935,33 @@ GLOBAL
 
     int beh_ids[16];
 
+    int *shader_prg = NULL;
+    int colorTableLoc = -1;
+    int colorTableSizeLoc = -1;
+    int initialPositionLoc = -1;
+
+    float colorTable[] = {
+         88.0 / 255.0,   0.0 / 255.0, 136.0 / 255.0,  // 241 =  0x580088FF ( 88,0,136,255 )
+        108.0 / 255.0,   0.0 / 255.0, 176.0 / 255.0,  // 242 =  0x6C00B0FF ( 108,0,176,255 )
+        128.0 / 255.0,   0.0 / 255.0, 212.0 / 255.0,  // 243 =  0x8000D4FF ( 128,0,212,255 )
+        152.0 / 255.0,  28.0 / 255.0, 252.0 / 255.0,  // 244 =  0x981CFCFF ( 152,28,252,255 )
+        164.0 / 255.0,  76.0 / 255.0, 252.0 / 255.0,  // 245 =  0xA44CFCFF ( 164,76,252,255 )
+        180.0 / 255.0, 124.0 / 255.0, 252.0 / 255.0,  // 246 =  0xB47CFCFF ( 180,124,252,255 )
+        200.0 / 255.0, 160.0 / 255.0, 252.0 / 255.0,  // 247 =  0xC8A0FCFF ( 200,160,252,255 )
+
+        252.0 / 255.0,  60.0 / 255.0,             0,  // 248 =  0xFC3C00FF ( 252,60,0,255 )
+        252.0 / 255.0,  92.0 / 255.0,             0,  // 249 =  0xFC5C00FF ( 252,92,0,255 )
+        252.0 / 255.0, 124.0 / 255.0,             0,  // 250 =  0xFC7C00FF ( 252,124,0,255 )
+        252.0 / 255.0, 156.0 / 255.0,             0,  // 251 =  0xFC9C00FF ( 252,156,0,255 )
+        252.0 / 255.0, 188.0 / 255.0,             0,  // 252 =  0xFCBC00FF ( 252,188,0,255 )
+        252.0 / 255.0, 220.0 / 255.0,             0,  // 253 =  0xFCDC00FF ( 252,220,0,255 )
+        252.0 / 255.0, 252.0 / 255.0,             0   // 254 =  0xFCFC00FF ( 252,252,0,255 )
+    };
+
+end
+
+
+
 LOCAL //all these are used by the main and processes running into them
     int xpos;
     int ypos;
@@ -2005,7 +2023,6 @@ DECLARE PROCESS Game_loop();
 DECLARE PROCESS Game_End_Reset();
 DECLARE FUNCTION Main_Logic();
 DECLARE PROCESS Show_Keys();
-DECLARE PROCESS Joystick_Select();
 DECLARE PROCESS Mouse_Pointer();
 DECLARE PROCESS Cheat_Screen();
 DECLARE PROCESS Options_Screen();
@@ -2252,6 +2269,25 @@ DECLARE PROCESS Pop_Bubbles( double x, y, int g_speed, int_speed, speed_inc, spe
 DECLARE PROCESS Put_Scroll_Text( y_start ); 
 DECLARE PROCESS Scroll_The_Text();
 
+
+FUNCTION reconnect_joys()
+BEGIN
+    IF ( !joy_query( joy_plr[ 0 ], JOY_QUERY_ATTACHED ) ) joy_plr[ 0 ] = -1; end
+    IF ( !joy_query( joy_plr[ 1 ], JOY_QUERY_ATTACHED ) ) joy_plr[ 1 ] = -1; end
+
+    FOR( int plr = 0; plr <= 1; plr++ )
+        IF ( joy_plr[ plr ] == -1 )
+            FOR ( int i = 0; i < 16; i++ )
+                IF ( i != joy_plr[ plr^1 ] && joy_query( i, JOY_QUERY_ATTACHED ) )
+                    joy_plr[ plr ] = i;
+                END
+            END
+        END
+    END
+END
+
+
+
 Process Main()
 PRIVATE
     int the_id;
@@ -2259,6 +2295,16 @@ BEGIN
     Set_Mode( 640, 480 ); //Screen Res
 
     init_bgd1_background_emulation();
+
+    shader_prg = shader_create( file("shaders/common.vert"), file( "shaders/changecolor.frag" ));
+
+    colorTableLoc = shader_getuniformlocation( shader_prg, "colorTable" );
+    colorTableSizeLoc = shader_getuniformlocation( shader_prg, "colorTableSize" );
+    initialPositionLoc = shader_getuniformlocation( shader_prg, "initialPosition" );
+
+    background.shader = shader_prg;
+
+    reconnect_joys();
 
     frm_rate = 60;
     frm_skip = 0;
@@ -2380,7 +2426,7 @@ end
 //Check for space to advance to main title screen
 
 PROCESS DS_Adv_To_Main_Check()
-BEGiN
+BEGIN
     LOOP
         IF ( key( _ESC ))
             BREAK;
@@ -2411,7 +2457,7 @@ PRIVATE
     int n_anim;
     int a_del;
 BEGIN
-#if 0 // jjp disable initial animation for fast test
+#if 1 // jjp disable initial animation for fast test
 signal( type P_Anim, s_kill );
 tscreen_adv = TRUE;
 s_trigger[ e_life ] = TRUE;
@@ -2911,114 +2957,43 @@ PROCESS Do_keys()
 PRIVATE
     int plr;
     int last_m; //last music selection if different change the music
-    int joyJF[ 4 ]; //for Joysticks Jump and Fire
 BEGIN
     timer[ 0 ] = 0; //For delaying key reads
     //userdefkeys - array of user defined keys
     //keypressed - array used to control the dinos
     LOOP
+        reconnect_joys();
+
         FOR ( plr = 0; plr <= 1; plr++ )
-            //USE Keys
-//            IF ( player_keys_joy[ plr ] == Use_Keys )
-                //Left
-                keys_pressed[ plr ].pl_left = key( userdefkeys[ plr ].pl_l );
-                //Right
-                keys_pressed[ plr ].pl_right = key( userdefkeys[ plr ].pl_r );
-                //Jump
-                keys_pressed[ plr ].pl_jump = key( userdefkeys[ plr ].pl_j );
+            keys_pressed[ plr ].pl_left  = key( userdefkeys[ plr ].pl_l ); //Left
+            keys_pressed[ plr ].pl_right = key( userdefkeys[ plr ].pl_r ); //Right
+            keys_pressed[ plr ].pl_jump  = key( userdefkeys[ plr ].pl_j ); //Jump
+            keys_pressed[ plr ].pl_fire  = key( userdefkeys[ plr ].pl_f ); //Fire
 
-                //Fire
-                IF ( bubbob[ plr ].autofire == FALSE )
-                    bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire = key_down( userdefkeys[ plr ].pl_f );
-                ELSE //Do Autofire
-                    bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire = key( userdefkeys[ plr ].pl_f );
-                END
-                bubbob[ plr ].bubrel = !bubbob[ plr ].bubkey;
-
-
-
-
-
-
+            if ( joy_plr[ plr ] != -1 )
+                keys_pressed[ plr ].pl_left   |= joy_query( joy_plr[ plr ], JOY_BUTTON_DPAD_LEFT    ) || joy_query( joy_plr[ plr ], JOY_AXIS_LEFTX ) < -16384;
+                keys_pressed[ plr ].pl_right  |= joy_query( joy_plr[ plr ], JOY_BUTTON_DPAD_RIGHT   ) || joy_query( joy_plr[ plr ], JOY_AXIS_LEFTX ) > 16383;
+                keys_pressed[ plr ].pl_jump   |= joy_query( joy_plr[ plr ], JOY_BUTTON_B            );
+                keys_pressed[ plr ].pl_fire   |= joy_query( joy_plr[ plr ], JOY_BUTTON_A            );
 /*
-
-        int joy = joy_query( JOY_QUERY_FIRST_ATTACHED );
-
-        if ( joy != -1 )
-            jkeys_state[ _JKEY_UP        ] |= joy_query( joy, JOY_BUTTON_DPAD_UP      ) || joy_query( joy, JOY_AXIS_LEFTY ) < -16384;
-            jkeys_state[ _JKEY_LEFT      ] |= joy_query( joy, JOY_BUTTON_DPAD_LEFT    ) || joy_query( joy, JOY_AXIS_LEFTX ) < -16384;
-            jkeys_state[ _JKEY_DOWN      ] |= joy_query( joy, JOY_BUTTON_DPAD_DOWN    ) || joy_query( joy, JOY_AXIS_LEFTY ) > 16383;
-            jkeys_state[ _JKEY_RIGHT     ] |= joy_query( joy, JOY_BUTTON_DPAD_RIGHT   ) || joy_query( joy, JOY_AXIS_LEFTX ) > 16383;
-            jkeys_state[ _JKEY_MENU      ] |= joy_query( joy, JOY_BUTTON_BACK         );
-            jkeys_state[ _JKEY_SELECT    ] |= joy_query( joy, JOY_BUTTON_START        );
-            jkeys_state[ _JKEY_A         ] |= joy_query( joy, JOY_BUTTON_A            );
-            jkeys_state[ _JKEY_B         ] |= joy_query( joy, JOY_BUTTON_B            );
-            jkeys_state[ _JKEY_X         ] |= joy_query( joy, JOY_BUTTON_X            );
-            jkeys_state[ _JKEY_Y         ] |= joy_query( joy, JOY_BUTTON_Y            );
-        end
+                jkeys_state[ _JKEY_MENU      ] |= joy_query( joy, JOY_BUTTON_BACK         );
+                jkeys_state[ _JKEY_SELECT    ] |= joy_query( joy, JOY_BUTTON_START        );
+                jkeys_state[ _JKEY_X         ] |= joy_query( joy, JOY_BUTTON_X            );
+                jkeys_state[ _JKEY_Y         ] |= joy_query( joy, JOY_BUTTON_Y            );
 */
+            end
 
-
-
-
-
-
-
-
-#if 0
-            ELSE //Use Joystick
-// jjp
-                IF ( level_type != lv_joystick )
-                    //Left
-                    IF ( joy.left )
-                        keys_pressed[ plr ].pl_left = TRUE;
-                    ELSE
-                        keys_pressed[ plr ].pl_left = FALSE;
-                    END
-                    //Right
-                    IF ( joy.right )
-                        keys_pressed[ plr ].pl_right = TRUE;
-                    ELSE
-                        keys_pressed[ plr ].pl_right = FALSE;
-                    END
-                    joyJF[ 0 ] = joy.up;
-                    joyJF[ 1 ] = joy.button1;
-                    joyJF[ 2 ] = joy.button2;
-                    joyJF[ 3 ] = joy.button3;
-                    joyJF[ 4 ] = joy.button4;
-                    //        player_joy_jump[plr]; //Joy Up 0 or button 1-4
-                    //        player_joy_fire[plr]; //1-4
-                    //Jump
-                    IF ( joyJF[ player_joy_jump[ plr ]] ) //joystick up but 1-4 then which joystick up but1-4
-                        keys_pressed[ plr ].pl_jump = TRUE;
-                    ELSE
-                        keys_pressed[ plr ].pl_jump = FALSE;
-                    END
-                    //Fire
-                    IF ( bubbob[ plr ].autofire == FALSE )
-                        IF ( joyJF[ player_joy_fire[ plr ]] )
-                            keys_pressed[ plr ].pl_fire = TRUE;
-                        ELSE
-                            keys_pressed[ plr ].pl_fire = FALSE;
-                            bubbob[ plr ].bubrel = TRUE;
-                        END
-                        IF ( bubbob[ plr ].bubrel AND keys_pressed[ plr ].pl_fire )
-                            bubbob[ plr ].bubkey = TRUE;
-                            bubbob[ plr ].bubrel = FALSE;
-                        END
-                    ELSE //Auto fire
-                        IF ( joyJF[ player_joy_fire[ plr ]] )
-                            keys_pressed[ plr ].pl_fire = TRUE;
-                            bubbob[ plr ].bubkey = TRUE;
-                        ELSE
-                            keys_pressed[ plr ].pl_fire = FALSE;
-                            bubbob[ plr ].bubrel = TRUE;
-                            bubbob[ plr ].bubkey = FALSE;
-                        END
-                    END
+            IF ( bubbob[ plr ].autofire == FALSE )
+                IF ( bubbob[ plr ].bubrel )
+                    bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire;
+                ELSE
+                    bubbob[ plr ].bubkey = FALSE;
                 END
-#endif
-//            END
+            ELSE
+                bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire;
+            END
+            bubbob[ plr ].bubrel = !keys_pressed[ plr ].pl_fire;
+
         END //Player Keys Loop
 
         timer[ 0 ] = 0;
@@ -3050,10 +3025,6 @@ BEGIN
                 END
                 IF ( key_down( _r )) //Redefine Keys
                     cur_tscreen = t_redefine_k;
-                    Main_logic();
-                END
-                IF ( key_down( _j )) //Joystick
-                    cur_tscreen = t_joystick;
                     Main_logic();
                 END
                 IF ( key_down( _F10 )) //
@@ -3564,12 +3535,8 @@ BEGIN
             level_type = lv_cheat;
             Cheat_Screen();
         END
-        CASE t_redefine_k: //Redefine keys/joystick select
+        CASE t_redefine_k: //Redefine keys
             Redefine_Keys();
-        END
-        CASE t_joystick: //Joystick Selection Screen
-            level_type = lv_joystick;
-            Joystick_Select();
         END
         CASE t_game_keys: //View Game Keys
             level_type = lv_show_k;
@@ -3622,8 +3589,6 @@ BEGIN
     y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "3    Enter Coin" );
     y_loc += 32;
-    Write( font_ed, x_loc, y_loc, 3, "J    Select Joystick" );
-    y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "K    Show Program Keys" );
     y_loc += 32;
     Write( font_ed, x_loc, y_loc, 3, "R    Redefine Keys" );
@@ -3658,165 +3623,6 @@ BEGIN
         FRAME;
     END
     tscreen_adv = TRUE; //back to options screen
-END
-
-
-PROCESS Joystick_Select()
-PRIVATE
-    int kj_dis1_id; //Text id of keys joystick text
-    int kj_dis2_id;
-    int joy_disJF1_id[ 4 ];
-    int joy_disJF2_id[ 4 ];
-    int pl1_new;
-    int pl2_new;
-    int cl_loop;
-BEGIN
-    //Initialise Joystick to default button 1
-    IF ( player_joy_fire[ 0 ] == 0 )
-        player_joy_fire[ 0 ] = 1; //PL1
-        player_joy_fire[ 1 ] = 1; //PL2
-    END
-    scroll_stop( 0 );
-    FRAME;
-    Write( font_g, ret_xtext( 16 ), ret_ytext( 3 ), 4, "@@@ JOYSTICK/KEYS SELECT @@@" );
-    Write( font_gr, ret_xtext( 3 ), ret_ytext( 5 ), 3, "PLAYER 1" );
-    Write( font_b, ret_xtext( 24 ), ret_ytext( 5 ), 4, "PLAYER 2" );
-    Write( font_s, ret_xtext( 0 ), ret_ytext( 23 ), 3, "1 AND 2  SELECT  KEYS/JOYSTICK" );
-    Write( font_s, ret_xtext( 0 ), ret_ytext( 24 ), 3, "F AND G  CHANGES  BUTTONS  ON  JOYSTICK" );
-    IF ( player_keys_joy[ 0 ] == Use_Keys )
-        kj_dis1_id = Write( font_s, ret_xtext( 3 ), ret_ytext( 7 ), 3, "KEYBOARD" );
-    ELSE
-        kj_dis1_id = Write( font_s, ret_xtext( 3 ), ret_ytext( 7 ), 3, "JOYSTICK" );
-        joy_disJF1_id[ 0 ] = Write( font_s, ret_xtext( 3 ), ret_ytext( 9 ), 3, "JUMP:" );
-        joy_disJF1_id[ 1 ] = Write( font_s, ret_xtext( 3 ), ret_ytext( 10 ), 3, "FIRE:" );
-        joy_disJF1_id[ 2 ] = Write( font_s, ret_xtext( 8 ), ret_ytext( 9 ), 3, Joy_Text[ player_joy_jump[ 0 ]] );
-        joy_disJF1_id[ 3 ] = Write( font_s, ret_xtext( 8 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 0 ]] );
-    END
-    IF ( player_keys_joy[ 1 ] == Use_Keys )
-        kj_dis2_id = Write( font_s, ret_xtext( 20 ), ret_ytext( 7 ), 3, "KEYBOARD" );
-    ELSE
-        kj_dis2_id = Write( font_s, ret_xtext( 20 ), ret_ytext( 7 ), 3, "JOYSTICK" );
-        joy_disJF2_id[ 0 ] = Write( font_s, ret_xtext( 20 ), ret_ytext( 9 ), 3, "JUMP:" );
-        joy_disJF2_id[ 1 ] = Write( font_s, ret_xtext( 20 ), ret_ytext( 10 ), 3, "FIRE:" );
-        joy_disJF2_id[ 2 ] = Write( font_s, ret_xtext( 25 ), ret_ytext( 9 ), 3, Joy_Text[ player_joy_jump[ 1 ]] );
-        joy_disJF2_id[ 3 ] = Write( font_s, ret_xtext( 25 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 1 ]] );
-    END
-    while(fade_info.fading) FRAME; end; fade_on(500);
-    //   player1_keys_joy = Use_Keys;
-    //   player2_keys_joy = Use_Keys;
-    //   Use_Keys = 0;
-    //   Use_Joy  = 1;
-    //    player_joy_jump[1]; //Joy Up or button 1-4
-    //    player_joy_fire[1]; //1-4
-    //Joy_Text[4] =
-    //"JOYSTICK UP", "BUTTON 1", "BUTTON 2", "BUTTON 3", "BUTTON 4";
-    LOOP
-        IF ( key( _1 ))
-            IF ( player_keys_joy[ 0 ] == Use_Keys ) //if player 1 using keys switch to joystick
-                player_keys_joy[ 0 ] = Use_Joy;
-                IF ( player_keys_joy[ 1 ] == Use_Joy ) //Switch player 2 back to keys as this player is using the joysitck
-                    player_keys_joy[ 1 ] = Use_Keys;
-                    pl2_new = TRUE;
-                END
-            ELSE
-                player_keys_joy[ 0 ] = Use_Keys; //switch back to keys
-            END
-            pl1_new = TRUE;
-        END
-        IF ( key( _2 ))
-            IF ( player_keys_joy[ 1 ] == Use_Keys ) //if player 2 using keys switch to joystick
-                player_keys_joy[ 1 ] = Use_Joy;
-                IF ( player_keys_joy[ 0 ] == Use_Joy ) //Switch player 1 back to keys as this player is using the joysitck
-                    player_keys_joy[ 0 ] = Use_Keys;
-                    pl1_new = TRUE;
-                END
-            ELSE //switch back to keys
-                player_keys_joy[ 1 ] = Use_Keys;
-            END
-            pl2_new = TRUE;
-        END
-        //J change joystick jump button
-        IF ( key( _G ))
-            IF ( player_keys_joy[ 0 ] == Use_Joy )
-                player_joy_jump[ 0 ]++;
-                IF ( player_joy_jump[ 0 ] > 4 )
-                    player_joy_jump[ 0 ] = 0;
-                END
-                write_delete( joy_disJF1_id[ 2 ] );
-                joy_disJF1_id[ 2 ] = Write( font_s, ret_xtext( 8 ), ret_ytext( 9 ), 3, Joy_Text[ player_joy_jump[ 0 ]] );
-            END
-            IF ( player_keys_joy[ 1 ] == Use_Joy )
-                player_joy_jump[ 1 ]++;
-                IF ( player_joy_jump[ 1 ] > 4 )
-                    player_joy_jump[ 1 ] = 0;
-                END
-                write_delete( joy_disJF2_id[ 2 ] );
-                joy_disJF2_id[ 2 ] = Write( font_s, ret_xtext( 25 ), ret_ytext( 9 ), 3, Joy_Text[ player_joy_jump[ 1 ]] );
-            END
-        END
-        //B Change bubble button
-        IF ( key( _F ))
-            IF ( player_keys_joy[ 0 ] == Use_Joy ) //Player 1 Change Fire button
-                player_joy_fire[ 0 ]++; //joystick button increase
-                IF ( player_joy_fire[ 0 ] > 4 )
-                    player_joy_fire[ 0 ] = 1;
-                END
-                write_delete( joy_disJF1_id[ 3 ] ); //Delete joy display
-                joy_disJF1_id[ 3 ] = Write( font_s, ret_xtext( 8 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 0 ]] );
-            END
-            IF ( player_keys_joy[ 1 ] == Use_Joy ) //Player 2 Change Fire button
-                player_joy_fire[ 1 ]++;
-                IF ( player_joy_fire[ 1 ] > 4 )
-                    player_joy_fire[ 1 ] = 1;
-                END
-                write_delete( joy_disJF2_id[ 3 ] );
-                joy_disJF2_id[ 3 ] = Write( font_s, ret_xtext( 25 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 1 ]] );
-            END
-        END
-        IF ( pl1_new )
-            pl1_new = FALSE; //update pl1 to false
-            write_delete( kj_dis1_id );
-            IF ( player_keys_joy[ 0 ] == Use_Keys )
-                IF ( joy_disJF1_id[ 0 ] != 0 ) //Remove the joystick button display info
-                    FOR ( cl_loop = 0; cl_loop < 4; cl_loop++ )
-                        write_delete( joy_disJF1_id[ cl_loop ] );
-                        joy_disJF1_id[ cl_loop ] = 0;
-                    END
-                END
-                kj_dis1_id = Write( font_s, ret_xtext( 3 ), ret_ytext( 7 ), 3, "KEYBOARD" );
-            ELSE
-                kj_dis1_id = Write( font_s, ret_xtext( 3 ), ret_ytext( 7 ), 3, "JOYSTICK" );
-                joy_disJF1_id[ 0 ] = Write( font_s, ret_xtext( 3 ), ret_ytext( 9 ), 3, "JUMP:" );
-                joy_disJF1_id[ 1 ] = Write( font_s, ret_xtext( 3 ), ret_ytext( 10 ), 3, "FIRE:" );
-                joy_disJF1_id[ 2 ] = Write( font_s, ret_xtext( 8 ), ret_ytext( 9 ), 3, Joy_Text[ player_joy_jump[ 0 ]] );
-                joy_disJF1_id[ 3 ] = Write( font_s, ret_xtext( 8 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 0 ]] );
-            END
-        END
-        IF ( pl2_new )
-            pl2_new = FALSE; //update pl2 to false
-            write_delete( kj_dis2_id );
-            IF ( player_keys_joy[ 1 ] == Use_Keys )
-                IF ( joy_disJF2_id[ 0 ] != 0 ) //Remove the joystick button display info
-                    FOR ( cl_loop = 0; cl_loop < 4; cl_loop++ )
-                        write_delete( joy_disJF2_id[ cl_loop ] );
-                        joy_disJF2_id[ cl_loop ] = 0;
-                    END
-                END
-                kj_dis2_id = Write( font_s, ret_xtext( 20 ), ret_ytext( 7 ), 3, "KEYBOARD" );
-            ELSE
-                kj_dis2_id = Write( font_s, ret_xtext( 20 ), ret_ytext( 7 ), 3, "JOYSTICK" );
-                joy_disJF2_id[ 0 ] = Write( font_s, ret_xtext( 20 ), ret_ytext( 9 ), 3, "JUMP:" );
-                joy_disJF2_id[ 1 ] = Write( font_s, ret_xtext( 20 ), ret_ytext( 10 ), 3, "FIRE:" );
-                joy_disJF2_id[ 2 ] = Write( font_s, ret_xtext( 25 ), ret_ytext( 9 ), 3, Joy_Text[ player_joy_jump[ 1 ]] );
-                joy_disJF2_id[ 3 ] = Write( font_s, ret_xtext( 25 ), ret_ytext( 10 ), 3, Joy_Text[ player_joy_fire[ 1 ]] );
-            END
-        END
-        IF ( Key( _esc ))
-            BREAK;
-        END
-        FRAME( 1000 );
-    END
-    tscreen_adv = TRUE;
 END
 
 
@@ -4525,7 +4331,11 @@ BEGIN
         END
         FRAME;
     END
+
+    shader = shader_prg;
+
     roll_id = Rotate_Palette( 248, 255, 3 );
+
     LOOP
         IF ( titles_timer >= 5 )
             kill = TRUE;
@@ -4933,31 +4743,16 @@ BEGIN
     END
     //Auto Play Loop
     REPEAT
-        //Left
-        IF ( keytime[ mv_left ] > timer_val )
-            keys_pressed[ plr ].pl_left = TRUE;
-        ELSE
-            keys_pressed[ plr ].pl_left = FALSE;
-        END
-        //Right
-        IF ( keytime[ mv_right ] > timer_val )
-            keys_pressed[ plr ].pl_right = TRUE;
-        ELSE
-            keys_pressed[ plr ].pl_right = FALSE;
-        END
-        //Jump
-        IF ( keytime[ mv_jump ] > timer_val )
-            keys_pressed[ plr ].pl_jump = TRUE;
-        ELSE
-            keys_pressed[ plr ].pl_jump = FALSE;
-        END
-        //Fire
-        IF ( keytime[ mv_fire ] > timer_val )
-            keys_pressed[ plr ].pl_fire = TRUE;
-        ELSE
-            keys_pressed[ plr ].pl_fire = FALSE;
+        
+        keys_pressed[ plr ].pl_left = keytime[ mv_left ] > timer_val; //Left
+        keys_pressed[ plr ].pl_right = keytime[ mv_right ] > timer_val; //Left
+        keys_pressed[ plr ].pl_jump = keytime[ mv_jump ] > timer_val; //Jump    
+        keys_pressed[ plr ].pl_fire = keytime[ mv_fire ] > timer_val ; //Fire
+
+        IF ( !keys_pressed[ plr ].pl_fire )
             bubbob[ plr ].bubrel = TRUE;
         END
+
         IF ( bubbob[ plr ].bubrel AND keys_pressed[ plr ].pl_fire )
             bubbob[ plr ].bubkey = TRUE;
             bubbob[ plr ].bubrel = FALSE;
@@ -5248,10 +5043,13 @@ BEGIN
     while(fade_info.fading) FRAME; end; fade_on(500);
 
     Timer[ 1 ] = 0;
+
     //   Rotate palette Purple for twinkling stars
-    rot_id = rotate_palette( 241, 248, intro_rotate_delay ); // Start_Col, End_Col 241-248
+    rot_id = Rotate_Palette( 241, 248, intro_rotate_delay ); // Start_Col, End_Col 241-248
+
     //   zooming title text
     intro_txt( 320, 40, 62 );
+
     //Do Music
     s_trigger[ e_bbstart ] = TRUE;
     REPEAT
@@ -5259,6 +5057,7 @@ BEGIN
         FRAME;
     UNTIL ( Titles_timer >= 70 ) //kill local var is altered by the rotate palette function when its completed
     kill = TRUE;
+
     //     signal_if_exists(rot_id, s_kill);
     //fade off slow to meet start of music
     fade_off(1000); while(fade_info.fading) FRAME; end
@@ -5483,24 +5282,35 @@ PRIVATE
     int pal_at_start; //palette has looped T/F
     int pal_end_count; //count of how many colours to shift
     int pal_del_count; //delay to slow down the shifting of the colours
+    float *palTable;
 BEGIN
     pal_rot_count = 0; //where the palette is
     pal_end_count = End_Col - Start_col;
+
+    palTable = &(colorTable[( Start_Col - 241 ) * 3]);
+
+    shader_activate(shader_prg);
     REPEAT
         pal_del_count++; //palette rotation timer delay increase
         //Rotation delay
         IF ( pal_del_count >= Rot_Delay )
-// jjp            roll_palette( Start_Col, End_Col - Start_col, 1 ); //move the palette
-            pal_rot_count++; //increase the colour rotation count by 1
+            shader_select(shader_prg);
+            shader_setuniform3fv( colorTableLoc, pal_end_count, palTable );
+            shader_setuniformi( colorTableSizeLoc, pal_end_count );
+            shader_setuniformi( initialPositionLoc, pal_rot_count );
+            shader_select(0);
+            pal_rot_count = wrap( pal_rot_count + 1, 0, pal_end_count - 1 ); //increase the colour rotation count by 1
             pal_del_count = 0; //reset the delay counter
-            IF ( pal_rot_count >= pal_end_count )
-                pal_rot_count = 0;
-            END
         END
         FRAME;
     UNTIL (( !exists( father ) OR father.kill OR kill ) AND pal_rot_count == 0 ) //have to check for seconds then
     //to see if the rotation has finishe
     if ( exists( father ) ) father.kill = TRUE; end //we are finshed rotating the palette and the timer has reached the correct time
+    shader_select(shader_prg);
+    shader_setuniform3fv( colorTableLoc, pal_end_count, palTable );
+    shader_setuniformi( colorTableSizeLoc, pal_end_count );
+    shader_setuniformi( initialPositionLoc, 0 );
+    shader_deactivate();
     FRAME;
 END
 
@@ -5631,6 +5441,7 @@ BEGIN
     s_trigger[ e_boss ] = TRUE;
     bosspotion[ 0 ] = B_Potion_Dis;
     bosspotion[ 1 ] = B_Potion_Dis;
+
     REPEAT
         //Start the level
         IF ( game_state == gs_level_start )
@@ -5668,32 +5479,41 @@ BEGIN
         FRAME;
         //Players on screen <= 0
     UNTIL ( game_state == gs_level_completed OR Players_on_screen <= 0 ) //Player died or game completed
+
     IF ( Players_on_screen <= 0 )
         signal( type Boss_baddie, s_kill );
         signal( type GF_End, s_kill );
         Game_End_Reset();
         RETURN;
     END
+
     level_type = lv_end;
     spec_Items[ 29 ].counter++; //purple treasure chest = completed game
+
     //Kill The keys
     signal( type Do_keys, s_kill );
     signal( type Game_loop, s_kill );
+
     Put_Scroll_Text( 27 ); //put the scroll text to screen
+
     //Clear last moves from movement array
+
     FOR ( plr_loop = 0; plr_loop <= 1; plr_loop++ )
         keys_pressed[ plr_loop ].pl_right = FALSE;
         keys_pressed[ plr_loop ].pl_left = FALSE;
         keys_pressed[ plr_loop ].pl_jump = FALSE;
         keys_pressed[ plr_loop ].pl_fire = FALSE;
     END
+
     bubble_alldie = TRUE;
+
     LOOP
         IF ( game_state == gs_comp_crack )
             BREAK;
         END
         FRAME;
     END
+
     //Crack Celing - GF break bubble triggers now
     TS_BlockCrack( 64, 48, 0 );
     TS_BlockCrack( 129, 48, 1 );
@@ -5701,14 +5521,18 @@ BEGIN
     TS_BlockCrack( 273, 48, 3 );
     TS_BlockCrack( 335, 48, 4 );
     TS_BlockCrack( 385, 48, 5 );
+
     LOOP
         FRAME;
         IF ( ani_finish >= 6 )
             BREAK;
         END //Wait till all completed
     END
+
     //Dino Fall
+
     game_state = gs_comp_girlf;
+
     TS_BlockFall( 92, 48, 0, 0 );
     TS_BlockFall( 159, 48, 1, -10 );
     TS_BlockFall( 223, 48, 2, 0 );
@@ -5716,8 +5540,10 @@ BEGIN
     TS_BlockFall( 366, 48, 4, 10 );
     TS_BlockFall( 427, 48, 5, 0 );
     TS_BlockFall( 490, 48, 6, 0 );
+
     DinoFall( 0 );
     DinoFall( 1 );
+
     //Remove blocks from background
     //TO DO
     ani_finish = 0;
@@ -5727,13 +5553,16 @@ BEGIN
         END
         FRAME;
     END
+
     game_state = gs_comp_dino_mv;
+
     IF ( Player_alive( 0 ) )
         bubbob[ 0 ].level_reached = 101;
     END
     IF ( Player_alive( 1 ) )
         bubbob[ 1 ].level_reached = 101;
     END
+
     //check that both dinos are alive
     IF ( players_on_screen != 2 )
         //find which one to make alive
@@ -5744,21 +5573,31 @@ BEGIN
             man( 0 );
         END
     END
+
     //move across to girfriend
+
     ani_finish = 0;
+
     Dino_move( 0 );
     Dino_move( 1 );
+
     LOOP
         IF ( ani_finish >= 2 )
             BREAK;
         END
         FRAME;
     END
+
     game_state = gs_comp_human;
+
     FRAME( 5000 );
+
     ani_finish = 0;
+
     game_state = gs_comp_kiss;
-    rotate_palette( 248, 254, 5 );
+
+    Rotate_Palette( 248, 254, 5 );
+
     //End Writing
     Static_Anim( x_scr_middle, y_scr_middle, pri_endwrit, 656 ); //Big Heart
     Static_Anim( x_scr_middle, y_million, pri_endwrit, 658 ); // 1 million
@@ -5766,32 +5605,42 @@ BEGIN
     Static_Anim( x_happy2, y_happy, pri_endwrit, 659 ); // Happy End Right
     Static_Anim( x_heart1, y_heart, pri_endwrit, 657 ); // Happy End Left
     Static_Anim( x_heart2, y_heart, pri_endwrit, 657 ); // Happy End Right
+
     LOOP
         IF ( ani_finish >= 2 )
             BREAK;
         END
         FRAME;
     END
+
     map_xput( blocksfile, scr_graf, grpclr_end, 32, drawloc, 0, 100, 0 );
-// jjp    convert_palette( blocksfile, scr_graf, offset pal ); //clear the screen
 
     write_delete( lev_txt ); //get rid of level number
+
     cur_level = 101; //For level all on highscore and level reached screen
+
     signal( type player_lives, s_kill );
     signal( type player_lives, s_kill );
+
     Dissolve_screen(); //Do Disolve blocks animation and put a line of stars to screen
+
     game_state = gs_comp_roof;
+
     LOOP
         IF ( game_state == gs_comp_comet )
             BREAK;
         END
         FRAME;
     END
+
     Comet();
+
     //Wait before sending bubbles off the screen
     FRAME( 10000 );
+
     game_state = gs_comp_buboff;
     ani_finish = 0;
+
     //Wait till bubbles go off the screen
     LOOP
         IF ( ani_finish >= 2 )
@@ -5808,11 +5657,13 @@ BEGIN
     fade_on(500);
 
     //kill the rotate pallette process
-    id3 = get_id( type rotate_palette );
+    id3 = get_id( type Rotate_Palette );
     if ( id3 ) id3.kill = TRUE; end
     //End Text
     timer[ 9 ] = 0;
+
     Scroll_the_text();
+
     LOOP
         s_timer = timer[ 9 ] / 100; //scroll timer in seconds
         IF ( s_timer > stext_secs OR
@@ -5821,6 +5672,7 @@ BEGIN
         END //check for how long we have been scrolling
         FRAME;
     END
+
     //Kill the scroller, which clears the scroll array as well
     signal( type Scroll_the_text, s_kill );
 
@@ -5828,6 +5680,7 @@ BEGIN
     fade_off(500); while(fade_info.fading) FRAME; end; 
 
     Do_keys();
+
     //Rest the game variables and advance to enter score screen
     Game_End_Reset();
     players_on_screen = 0;
@@ -10663,6 +10516,7 @@ PRIVATE
     int dest_st_block;
     int exit_x_adj;
 BEGIN
+    cshape = SHAPE_CIRCLE;
     badnum = bub_type;
     region = 1; //needed for clipping the sprite when it goes off the playfield
     file = sprites;
@@ -11828,7 +11682,7 @@ BEGIN
     END
     SWITCH ( sprid )
         CASE 9..13: //potions
-            Potion_vs( sprid -9 );
+            Potion_VS( sprid - 9 );
         END
         CASE 34..39: //Candy canes collected
             ffall_type = ffall_t_ccane;
@@ -12384,6 +12238,7 @@ PRIVATE
     int perfect; //display perfect?
     int eff_channel;
 BEGIN
+    region = 1;
     level_type = lv_potion; //to stop hurry up and Skel and kills the trap bubbles
     act_hurry = level_timer + 100;
     act_skel = level_timer + 100;
@@ -12458,31 +12313,33 @@ BEGIN
     plr_2_alive = Player_alive( 1 ); //gets T/F player 2 alive
     //    plr1_score = total_food;
     //TOTALS
+    text.region = 1;
     move_y1 = y_pot500;
     IF ( plr_1_alive )
-        anim_ids[ 0 ] = static_anim2( x_pot500, y_pot500, pri_potion, pot_500 );
+        anim_ids[ 0 ] = Static_Anim2( x_pot500, y_pot500, pri_potion, pot_500 );
         textids[ 4 ] = write_var( font_pg, x_pot1_sc, y_pot_sc, 5, plr1_score );
     END
     IF ( plr_2_alive )
-        anim_ids[ 1 ] = static_anim2( x_pot500 + x_pot2_add, y_pot500, pri_potion, pot_500 + 1 );
+        anim_ids[ 1 ] = Static_Anim2( x_pot500 + x_pot2_add, y_pot500, pri_potion, pot_500 + 1 );
         textids[ 5 ] = write_var( font_pb, x_pot1_sc + x_pot2_add, y_pot_sc, 5, plr2_score );
     END
+    text.region = -1;
     //perfect level score?
     //Do Graphic if perfect
     IF ( plr1_score + plr2_score == total_food )
         perfect = TRUE;
         IF ( plr_1_alive )
             IF ( plr1_score >= plr2_score )
-                anim_ids[ 2 ] = static_anim2( x_pot500, y_pot500 + 32, pri_potion, pot_perfect + 1 );
+                anim_ids[ 2 ] = Static_Anim2( x_pot500, y_pot500 + 32, pri_potion, pot_perfect + 1 );
             ELSE
-                anim_ids[ 2 ] = static_anim2( x_pot500, y_pot500 + 32, pri_potion, pot_perfect );
+                anim_ids[ 2 ] = Static_Anim2( x_pot500, y_pot500 + 32, pri_potion, pot_perfect );
             END
         END
         IF ( plr_2_alive )
             IF ( plr2_score >= plr1_score )
-                anim_ids[ 3 ] = static_anim2( x_pot500 + x_pot2_add, y_pot500 + 32, pri_potion, pot_perfect + pot_badd + 1 );
+                anim_ids[ 3 ] = Static_Anim2( x_pot500 + x_pot2_add, y_pot500 + 32, pri_potion, pot_perfect + pot_badd + 1 );
             ELSE
-                anim_ids[ 3 ] = static_anim2( x_pot500 + x_pot2_add, y_pot500 + 32, pri_potion, pot_perfect + pot_badd );
+                anim_ids[ 3 ] = Static_Anim2( x_pot500 + x_pot2_add, y_pot500 + 32, pri_potion, pot_perfect + pot_badd );
             END
         END
     END
@@ -12570,7 +12427,7 @@ BEGIN
         write_delete( textids[ 5 ] );
     END
     //kill Graphics
-    signal( type static_anim2, s_kill );
+    signal( type Static_Anim2, s_kill );
     //Set back to level normal so song will restart
     level_type = lv_normal;
     level_next = level_timer + 1;
@@ -14727,6 +14584,7 @@ PRIVATE
     int popit; //to pop bubbles right away this gets an id of the dino blowing the bubble
     int blow_this; //gets what the player will blow from bubble_type[1]
 BEGIN
+    cshape = SHAPE_CIRCLE;
     region = 1; //needed for clipping the sprite when it goes off the playfield
     file = sprites;
     //    xmov = 12;
@@ -15085,7 +14943,7 @@ BEGIN
             IF ( bubbob[ d_index ].bubtimer <= 0 )
                 IF ( bubbob[ d_index ].bubkey )
                     bubble = TRUE;
-                    blow_bubble( d_index, id );
+                    Blow_Bubble( d_index, id );
                 END
             ELSE
                 bubbob[ d_index ].bubtimer--;
@@ -16200,6 +16058,7 @@ END
 PROCESS Static_Anim( xloc, yloc, zpri, an_start )
 //Does stand alone animation
 BEGIN
+    shader = shader_prg;
     region = 1; //needed for clipping the sprite when it goes off the playfield
     file = sprites;
     x = xloc;
@@ -16409,7 +16268,6 @@ PRIVATE
     int d_star_id; //for the invisible process where the star moves to in the lives bar
     int a_id; //id for the last animation star, when it finishes life +1
     int nice_id; //id of the nice anim
-    int keys_id;
     int timer_er; //sometimes all the bubbles dont get popped
 BEGIN
     //fade off
@@ -16568,7 +16426,10 @@ BEGIN
     //set to do next level
     level_advance = 1; //for scroll speed;
     game_state = gs_start_adv_level;
-    signal_if_exists( keys_id, s_wakeup );
+
+    signal( type Extend_Dino, s_kill );
+    signal( type Do_Keys, s_wakeup );
+
     //awaken dinos
     IF ( Player_Alive( 0 ) )
         signal_if_exists( bubbob[ 0 ].sprite_id, s_wakeup );
