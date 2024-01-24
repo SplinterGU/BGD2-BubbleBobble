@@ -2458,12 +2458,6 @@ PRIVATE
     int n_anim;
     int a_del;
 BEGIN
-#if 1 // jjp disable initial animation for fast test
-signal( type P_Anim, s_kill );
-tscreen_adv = TRUE;
-s_trigger[ e_life ] = TRUE;
-return;
-#endif
     file = titlesfile;
     while(fade_info.fading) FRAME; end; fade_on(500);
     DS_Adv_To_Main_Check();
@@ -8599,10 +8593,10 @@ BEGIN
             IF ( id2.kill != 0 )
                 BREAK;
             END
-            IF ( ( level_type != lv_normal AND level_type != lv_demo ) OR game_state == gs_adv_level OR game_state == gs_level_anims ) // jjp revisar
+            IF ( ( level_type != lv_normal AND level_type != lv_demo ) OR game_state == gs_adv_level OR game_state == gs_level_anims ) // jjp check this
                 RETURN;
             END
-        UNTIL ( ( ( rway == 1 AND x => xstart ) OR ( rway == 2 AND x =< xstart ) ) AND ( sidehit OR changedircount > 1 ) ) // jjp revisar
+        UNTIL ( ( ( rway == 1 AND x => xstart ) OR ( rway == 2 AND x =< xstart ) ) AND ( sidehit OR changedircount > 1 ) ) // jjp check this
     END
     id2.yinertia = FALSE; //to let the normal baddie process
     id2.xinertia = FALSE; //know that it can throw another and move again
@@ -11961,10 +11955,7 @@ BEGIN
     map_xput( platdata, plt_hrd, secret_plat, Resize_x, Resize_y, 0, Resize_amt, 0 ); // file, dest, orig, x, y, ang, size, flags
 
     //resize screen clearer
-//    map_xput( blocksfile, scr_graf, grpclr_secret, 0, 0, 0, 2000, 0 );
     map_clear( blocksfile, scr_graf );
-
-// jjp    convert_palette( blocksfile, scr_graf, offset pal ); //clear the screen
 
     //put the screen to the screen buffer
     map_put( blocksfile, scr_graf, blocksfile, s_room_scr + roomid, 0, drawloc );
@@ -15504,9 +15495,10 @@ BEGIN
             Background_Draw( 544 );
         END
     END
+
     //clears the screen
     do_scr_clearscreen( drawloc );
-// jjp    convert_palette( blocksfile, scr_graf, offset pal );
+
     //Draw the platforms and borders
     REPEAT
         Do_Scr_Bline( drawcount, this_draw_loc, new_h_map );
@@ -15598,7 +15590,7 @@ BEGIN
 
         //clears the screen
         do_scr_clearscreen( drawloc );
-// jjp        convert_palette( blocksfile, scr_graf, offset pal );
+
         Border_left( drawloc );
         //BACKGROUNDS
         IF ( do_bgrounds )
