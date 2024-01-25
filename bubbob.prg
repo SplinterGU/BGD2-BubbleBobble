@@ -2219,7 +2219,7 @@ DECLARE PROCESS XBlockFind( xst, yst );
 DECLARE PROCESS YColFind( xst, yst );
 DECLARE FUNCTION Extend_Demo_Level();
 DECLARE PROCESS Next_Level();
-DECLARE PROCESS Copy_To_Maps();
+DECLARE FUNCTION Copy_To_Maps();
 DECLARE PROCESS Background_Draw( yloc );
 DECLARE PROCESS Border_left( yloc );
 DECLARE PROCESS Do_Scr_Bline_NLevel( yloc, yloc2 ); 
@@ -2294,6 +2294,8 @@ PRIVATE
     int the_id;
 BEGIN
     Set_Mode( 640, 480 ); //Screen Res
+
+    FRAME; // for sdl2 trash on screen
 
     init_bgd1_background_emulation();
 
@@ -2400,28 +2402,31 @@ BEGIN
     //exit("Game finished",0);
 END
 
-
 FUNCTION int get_pixel_idx(int color)
 begin
-    switch( color )
-        case /*0x000000FF,*/ 0x00000000, 0x000000FF: return 0; end
-        case 0x04040400, 0x040404FF, 0xFC101000, 0xFC1010FF: return 1; end
-        case 0x20202000, 0x202020FF, 0x0020FC00, 0x0020FCFF: return 2; end
-        case 0x30303000, 0x303030FF, 0x20FC3000, 0x20FC30FF: return 3; end
-        case 0x40404000, 0x404040FF, 0x14FCFC00, 0x14FCFCFF: return 4; end
-        case 0x54545400, 0x545454FF, 0xFCFC0000, 0xFCFC00FF: return 5; end
-        case 0x64646400, 0x646464FF, 0xF8FCF800, 0xF8FCF8FF: return 6; end
-        case 0x74747400, 0x747474FF, 0xE8087800, 0xE80878FF: return 7; end
-        case /*0x848484FF,*/ 0x84848400, 0x848484FF: return 8; end
+    byte r,g,b;
+
+    rgb_get(color, &r, &g, &b);
+
+    int c = ( ( ( int ) r ) << 16 ) | ( ( ( int ) g ) << 8 ) | b;
+
+    switch( c )
+        case 0x00000000: return 0; end
+        case 0x00040404, 0x00FC1010: return 1; end
+        case 0x00202020, 0x000020FC: return 2; end
+        case 0x00303030, 0x0020FC30: return 3; end
+        case 0x00404040, 0x0014FCFC: return 4; end
+        case 0x00545454, 0x00FCFC00: return 5; end
+        case 0x00646464, 0x00F8FCF8: return 6; end
+        case 0x00747474, 0x00E80878: return 7; end
+        case 0x00848484: return 8; end
     end
     return 0;
 end
 
 FUNCTION int get_hard(file,graph,double x,y)
 begin
-    int color = get_pixel_idx(map_get_pixel(file,graph,x,y));
-//    map_put_pixel(file,graph,x,y,rgb(255,255,255));
-    return color;
+    return get_pixel_idx(map_get_pixel(file,graph,x,y));
 end
 
 //Check for space to advance to main title screen
@@ -15682,7 +15687,7 @@ END
  //Next_Level
 //Copy hardness map to fpg hardness maps
 
-PROCESS Copy_To_Maps()
+FUNCTION Copy_To_Maps()
 PRIVATE
     int x_count;
     int y_count;
@@ -15698,10 +15703,10 @@ BEGIN
             block_to_do_plat = map_get_pixel( 0, plat_map, x_loc, y_loc ); //get block colour 1 = plat, 2 bubb drift up, 3 hidden
             block_to_do_bub = map_get_pixel( 0, bubble_map, x_loc, y_loc ); //get block colour
             IF ( get_pixel_idx(block_to_do_plat) != blocks_hd4 ) //if a block copy it to the platform map but not a invisable one
-                map_put_pixel( platdata, plat_start, x_count + 5 + 1, y_count + 4, block_to_do_plat ); // +5 to miss out side of screen band
+                map_put_pixel( platdata, plat_start, x_count + 5, y_count + 4, block_to_do_plat ); // +5 to miss out side of screen band
             END
             // +5 to miss out side of screen bands
-            map_put_pixel( platdata, bub_start, x_count + 5 + 1, y_count + 4, block_to_do_bub );
+            map_put_pixel( platdata, bub_start, x_count + 5, y_count + 4, block_to_do_bub );
             x_loc++;
         END
         x_loc = act_level * 28; //reset x position
@@ -15833,7 +15838,8 @@ BEGIN
     UNTIL ( drawcount >= blocks_dwn ) //Loop Y end
     map_put( blocksfile, scr_graf, blocksfile, 2, 0, clip_y_placement );
 END
- //Do Scr Bline
+
+//Do Scr Bline
 //Draws a line of platforms across the screen
 //including the borders
 //Extend screen, Demo title level
