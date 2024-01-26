@@ -1958,7 +1958,25 @@ GLOBAL
         252.0 / 255.0, 220.0 / 255.0,             0,  // 253 =  0xFCDC00FF ( 252,220,0,255 )
         252.0 / 255.0, 252.0 / 255.0,             0   // 254 =  0xFCFC00FF ( 252,252,0,255 )
     };
+/*
+    float colorTable2[] = {
+        136.0 / 255.0,   0.0 / 255.0,  88.0 / 255.0,   // 241 =  0x580088FF ( 88,0,136,255 )
+        176.0 / 255.0,   0.0 / 255.0, 108.0 / 255.0,   // 242 =  0x6C00B0FF ( 108,0,176,255 )
+        212.0 / 255.0,   0.0 / 255.0, 128.0 / 255.0,   // 243 =  0x8000D4FF ( 128,0,212,255 )
+        252.0 / 255.0,  28.0 / 255.0, 152.0 / 255.0,   // 244 =  0x981CFCFF ( 152,28,252,255 )
+        252.0 / 255.0,  76.0 / 255.0, 164.0 / 255.0,   // 245 =  0xA44CFCFF ( 164,76,252,255 )
+        252.0 / 255.0, 124.0 / 255.0, 180.0 / 255.0,   // 246 =  0xB47CFCFF ( 180,124,252,255 )
+        252.0 / 255.0, 160.0 / 255.0, 200.0 / 255.0,   // 247 =  0xC8A0FCFF ( 200,160,252,255 )
 
+                    0,  60.0 / 255.0, 252.0 / 255.0,  // 248 =  0xFC3C00FF ( 252,60,0,255 )
+                    0,  92.0 / 255.0, 252.0 / 255.0,  // 249 =  0xFC5C00FF ( 252,92,0,255 )
+                    0, 124.0 / 255.0, 252.0 / 255.0,  // 250 =  0xFC7C00FF ( 252,124,0,255 )
+                    0, 156.0 / 255.0, 252.0 / 255.0,  // 251 =  0xFC9C00FF ( 252,156,0,255 )
+                    0, 188.0 / 255.0, 252.0 / 255.0,  // 252 =  0xFCBC00FF ( 252,188,0,255 )
+                    0, 220.0 / 255.0, 252.0 / 255.0,  // 253 =  0xFCDC00FF ( 252,220,0,255 )
+                    0, 252.0 / 255.0, 252.0 / 255.0   // 254 =  0xFCFC00FF ( 252,252,0,255 )
+    };
+*/
 end
 
 
@@ -2271,20 +2289,26 @@ DECLARE PROCESS Put_Scroll_Text( y_start );
 DECLARE PROCESS Scroll_The_Text();
 
 
+
 FUNCTION reconnect_joys()
 BEGIN
-    IF ( !joy_query( joy_plr[ 0 ], JOY_QUERY_ATTACHED ) ) joy_plr[ 0 ] = -1; end
-    IF ( !joy_query( joy_plr[ 1 ], JOY_QUERY_ATTACHED ) ) joy_plr[ 1 ] = -1; end
+    if ( os_id == OS_SWITCH )
+        joy_plr[ 0 ] = 0;
+        joy_plr[ 1 ] = 1;
+    else
+        IF ( !joy_query( joy_plr[ 0 ], JOY_QUERY_ATTACHED ) ) joy_plr[ 0 ] = -1; end
+        IF ( !joy_query( joy_plr[ 1 ], JOY_QUERY_ATTACHED ) ) joy_plr[ 1 ] = -1; end
 
-    FOR( int plr = 0; plr <= 1; plr++ )
-        IF ( joy_plr[ plr ] == -1 && Player_Alive( plr ) )
-            FOR ( int i = 0; i < 16; i++ )
-                IF ( i != joy_plr[ plr^1 ] && joy_query( i, JOY_QUERY_ATTACHED ) )
-                    joy_plr[ plr ] = i;
+        FOR( int plr = 0; plr <= 1; plr++ )
+            IF ( joy_plr[ plr ] == -1 )
+                FOR ( int i = 0; i < 16; i++ )
+                    IF ( i != joy_plr[ plr^1 ] && joy_query( i, JOY_QUERY_ATTACHED ) )
+                        joy_plr[ plr ] = i;
+                    END
                 END
             END
         END
-    END
+    end
 END
 
 
@@ -2983,16 +3007,18 @@ BEGIN
 */
             end
 
-            IF ( bubbob[ plr ].autofire == FALSE )
-                IF ( bubbob[ plr ].bubrel )
-                    bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire;
+            IF ( Player_Alive( plr ) && level_type != lv_demo && level_type != lv_instr )
+                IF ( bubbob[ plr ].autofire == FALSE )
+                    IF ( bubbob[ plr ].bubrel )
+                        bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire;
+                    ELSE
+                        bubbob[ plr ].bubkey = FALSE;
+                    END
                 ELSE
-                    bubbob[ plr ].bubkey = FALSE;
+                    bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire;
                 END
-            ELSE
-                bubbob[ plr ].bubkey = keys_pressed[ plr ].pl_fire;
+                bubbob[ plr ].bubrel = !keys_pressed[ plr ].pl_fire;
             END
-            bubbob[ plr ].bubrel = !keys_pressed[ plr ].pl_fire;
 
         END //Player Keys Loop
 
@@ -3005,12 +3031,16 @@ BEGIN
             END
         END
         IF ( level_type == lv_title )
-            IF ( key_down( _1 ) AND Credits > 0 AND player_st1 == FALSE )
-                Credits--; //Use Up a coin
+            IF ( ( ( os_id == OS_SWITCH AND keys_pressed[ 0 ].pl_fire ) || 
+                   ( key_down( _1 ) AND Credits > 0 ) )
+                 AND player_st1 == FALSE )
+                IF ( os_id != OS_SWITCH ) Credits--; end //Use Up a coin
                 player_st1 = TRUE;
             END
-            IF ( key_down( _2 ) AND Credits > 0 AND player_st2 == FALSE )
-                Credits--; //Use Up a coin
+            IF ( ( ( os_id == OS_SWITCH AND keys_pressed[ 1 ].pl_fire ) || 
+                   ( key_down( _2 ) AND Credits > 0 ) )
+                 AND player_st2 == FALSE )
+                IF ( os_id != OS_SWITCH ) Credits--; end //Use Up a coin
                 player_st2 = TRUE;
             END
             //Start the game
@@ -3053,12 +3083,16 @@ BEGIN
              )
            )
             //Player join running game
-            IF ( key_down( _1 ) AND bubbob[ 0 ].sprite_id == 0 AND Credits > 0 )
-                Credits--; //Use Up a coin
+            IF ( ( ( os_id == OS_SWITCH AND keys_pressed[ 0 ].pl_fire ) || 
+                   ( key_down( _1 ) AND Credits > 0 ) )
+                 AND bubbob[ 0 ].sprite_id == 0 )
+                IF ( os_id != OS_SWITCH ) Credits--; end //Use Up a coin
                 Player_join_game( 0 );
             END
-            IF ( key_down( _2 ) AND bubbob[ 1 ].sprite_id == 0 AND Credits > 0 )
-                Credits--; //Use Up a coin
+            IF ( ( ( os_id == OS_SWITCH AND keys_pressed[ 1 ].pl_fire ) || 
+                   ( key_down( _2 ) AND Credits > 0 ) )
+                 AND bubbob[ 1 ].sprite_id == 0 )
+                IF ( os_id != OS_SWITCH ) Credits--; end //Use Up a coin
                 Player_join_game( 1 );
             END
             IF ( key_down( _F8 ))
@@ -3395,12 +3429,16 @@ BEGIN
     Do_Intro_Screen(); //the amount of players currently starting the game will be checked with "players_joining"
     //when a player presses the start button it will be checked with the above procedure
     REPEAT
-        IF ( key( _1 ) AND Credits > 0 AND player_st1 == FALSE )
-            Credits--; //Use Up a coin
+        IF ( ( ( os_id == OS_SWITCH AND keys_pressed[ 0 ].pl_fire ) || 
+               ( key_down( _1 ) AND Credits > 0 ) )
+             AND player_st1 == FALSE )
+            IF ( os_id != OS_SWITCH ) Credits--; end //Use Up a coin
             player_st1 = TRUE;
         END
-        IF ( key( _2 ) AND Credits > 0 AND player_st2 == FALSE )
-            Credits--; //Use Up a coin
+        IF ( ( ( os_id == OS_SWITCH AND keys_pressed[ 1 ].pl_fire ) || 
+               ( key_down( _2 ) AND Credits > 0 ) )
+             AND player_st2 == FALSE )
+            IF ( os_id != OS_SWITCH ) Credits--; end //Use Up a coin
             player_st2 = TRUE;
         END
         FRAME;
@@ -3544,6 +3582,7 @@ BEGIN
         END
         CASE t_start_game: //start the game
             signal( type Level_Reached_adv, s_kill_tree );
+            signal( type Auto_Adv_After, s_kill_tree);
             signal( type Food, s_kill );
             Game_loop();
         END
@@ -5287,7 +5326,11 @@ BEGIN
     pal_rot_count = 0; //where the palette is
     pal_end_count = End_Col - Start_col;
 
-    palTable = &(colorTable[( Start_Col - 241 ) * 3]);
+//    if ( OS_SWITCH )
+//        palTable = &(colorTable2[( Start_Col - 241 ) * 3]);
+//    else
+        palTable = &(colorTable[( Start_Col - 241 ) * 3]);
+//    end
 
     shader_activate(shader_prg);
     REPEAT
@@ -10516,7 +10559,7 @@ PRIVATE
     int dest_st_block;
     int exit_x_adj;
 BEGIN
-    cshape = SHAPE_CIRCLE;
+//    cshape = SHAPE_CIRCLE;
     badnum = bub_type;
     region = 1; //needed for clipping the sprite when it goes off the playfield
     file = sprites;
@@ -14581,7 +14624,7 @@ PRIVATE
     int popit; //to pop bubbles right away this gets an id of the dino blowing the bubble
     int blow_this; //gets what the player will blow from bubble_type[1]
 BEGIN
-    cshape = SHAPE_CIRCLE;
+//    cshape = SHAPE_CIRCLE;
     region = 1; //needed for clipping the sprite when it goes off the playfield
     file = sprites;
     //    xmov = 12;
