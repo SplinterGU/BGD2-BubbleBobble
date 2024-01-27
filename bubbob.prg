@@ -2317,13 +2317,21 @@ Process Main()
 PRIVATE
     int the_id;
 BEGIN
+    if ( os_id == OS_SWITCH )
+        screen.scale_resolution = 12800720;
+    end
+
     Set_Mode( 640, 480 ); //Screen Res
 
     FRAME; // for sdl2 trash on screen
 
     init_bgd1_background_emulation();
 
-    shader_prg = shader_create( file("shaders/common.vert"), file( "shaders/changecolor.frag" ));
+    if ( os_id == OS_SWITCH )
+        shader_prg = shader_create( file("shaders/common-gles.vert"), file( "shaders/changecolor-gles.frag" ));
+    else
+        shader_prg = shader_create( file("shaders/common.vert"), file( "shaders/changecolor.frag" ));
+    end
 
     colorTableLoc = shader_getuniformlocation( shader_prg, "colorTable" );
     colorTableSizeLoc = shader_getuniformlocation( shader_prg, "colorTableSize" );

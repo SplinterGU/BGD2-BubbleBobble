@@ -1,3 +1,5 @@
+#version 130
+
 // Input vertex attributes (from vertex shader)
 varying vec2 fragTexCoord;
 varying vec4 fragColor;
@@ -14,10 +16,11 @@ void main()
     vec3 texelColor = texture2D(texture0, fragTexCoord).rgb;
 
     for (int i = 0; i < colorTableSize; ++i) {
-        if (texelColor.r == colorTable[i].r && texelColor.g == colorTable[i].g && texelColor.b == colorTable[i].b ) {
+        if (texelColor.rgb == colorTable[i].rgb ) {
             gl_FragColor = vec4(colorTable[ ( initialPosition + i ) % colorTableSize ], texture2D(texture0, fragTexCoord ).a);
             return;
         }
     }
+
     gl_FragColor = vec4(texelColor, texture2D(texture0, fragTexCoord ).a);
 }

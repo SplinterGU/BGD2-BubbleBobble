@@ -1,16 +1,19 @@
-#version 130
+#version 300 es
+
+precision mediump int;
+precision mediump float;
 
 // Input vertex attributes
-attribute vec3 bgd_Vertex;
-attribute vec2 bgd_TexCoord;
-attribute vec4 bgd_Color;
+in vec3 bgd_Vertex;
+in vec2 bgd_TexCoord;
+in vec4 bgd_Color;
 
 // Input uniform values
 uniform mat4 bgd_ModelViewProjectionMatrix;
 
 // Output vertex attributes (to fragment shader)
-varying vec2 fragTexCoord;
-varying vec4 fragColor;
+out vec2 fragTexCoord;
+out vec4 fragColor;
 
 // NOTE: Add here your custom variables
 
