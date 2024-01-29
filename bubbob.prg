@@ -1937,6 +1937,7 @@ GLOBAL
     int beh_ids[16];
 
     int *shader_prg = NULL;
+    int *shader_parameters = NULL;
     int colorTableLoc = -1;
     int colorTableSizeLoc = -1;
     int initialPositionLoc = -1;
@@ -2333,11 +2334,14 @@ BEGIN
         shader_prg = shader_create( file("shaders/common.vert"), file( "shaders/changecolor.frag" ));
     end
 
-    colorTableLoc = shader_getuniformlocation( shader_prg, "colorTable" );
-    colorTableSizeLoc = shader_getuniformlocation( shader_prg, "colorTableSize" );
-    initialPositionLoc = shader_getuniformlocation( shader_prg, "initialPosition" );
+    shader_parameters = shader_create_params( 3 );
+
+    colorTableLoc = shader_get_param_location( shader_prg, "colorTable" );
+    colorTableSizeLoc = shader_get_param_location( shader_prg, "colorTableSize" );
+    initialPositionLoc = shader_get_param_location( shader_prg, "initialPosition" );
 
     background.shader = shader_prg;
+    background.shader_params = shader_parameters;
 
     reconnect_joys();
 
@@ -4380,6 +4384,7 @@ BEGIN
     END
 
     shader = shader_prg;
+    shader_params = shader_parameters;
 
     roll_id = Rotate_Palette( 248, 255, 3 );
 
@@ -5345,11 +5350,11 @@ BEGIN
         pal_del_count++; //palette rotation timer delay increase
         //Rotation delay
         IF ( pal_del_count >= Rot_Delay )
-            shader_select(shader_prg);
-            shader_setuniform3fv( colorTableLoc, pal_end_count, palTable );
-            shader_setuniformi( colorTableSizeLoc, pal_end_count );
-            shader_setuniformi( initialPositionLoc, pal_rot_count );
-            shader_select(0);
+//            shader_select(shader_prg);
+            shader_set_param( shader_parameters, UNIFORM_FLOAT3_ARRAY, colorTableLoc, pal_end_count, palTable );
+            shader_set_param( shader_parameters, UNIFORM_INT, colorTableSizeLoc, pal_end_count );
+            shader_set_param( shader_parameters, UNIFORM_INT, initialPositionLoc, pal_rot_count );
+//            shader_select(0);
             pal_rot_count = wrap( pal_rot_count + 1, 0, pal_end_count - 1 ); //increase the colour rotation count by 1
             pal_del_count = 0; //reset the delay counter
         END
@@ -5358,9 +5363,9 @@ BEGIN
     //to see if the rotation has finishe
     if ( exists( father ) ) father.kill = TRUE; end //we are finshed rotating the palette and the timer has reached the correct time
     shader_select(shader_prg);
-    shader_setuniform3fv( colorTableLoc, pal_end_count, palTable );
-    shader_setuniformi( colorTableSizeLoc, pal_end_count );
-    shader_setuniformi( initialPositionLoc, 0 );
+    shader_set_param( shader_parameters, UNIFORM_FLOAT3_ARRAY, colorTableLoc, pal_end_count, palTable );
+    shader_set_param( shader_parameters, UNIFORM_INT, colorTableSizeLoc, pal_end_count );
+    shader_set_param( shader_parameters, UNIFORM_INT, initialPositionLoc, 0 );
     shader_deactivate();
     FRAME;
 END
@@ -16109,6 +16114,8 @@ PROCESS Static_Anim( xloc, yloc, zpri, an_start )
 //Does stand alone animation
 BEGIN
     shader = shader_prg;
+    shader_params = shader_parameters;
+
     region = 1; //needed for clipping the sprite when it goes off the playfield
     file = sprites;
     x = xloc;
