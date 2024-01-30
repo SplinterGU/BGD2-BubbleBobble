@@ -2277,7 +2277,6 @@ DECLARE PROCESS Button_norm( but_ind );
 DECLARE PROCESS Button_Tog( but_ind, sel_def_val ); 
 DECLARE PROCESS Button_Event_Handler( but_event );
 DECLARE PROCESS Cheat_rst();
-DECLARE PROCESS Save_Settings();
 DECLARE PROCESS Bubble_Spitter_2( b_type );
 DECLARE PROCESS Bubble_Field( x_sp, y_sp, which );
 DECLARE PROCESS Scroll_Bubbles();
@@ -2388,10 +2387,10 @@ BEGIN
     //DISPLAY BACKGROUNDS
     do_bgrounds = TRUE; //graphics behind the screen on scroll plane 2
     do_levels = lev_normal; //levels normal
-    IF ( !key( _r ) ) //Game reset on execute in case someone has screwed up the settings totally
-        //Game Settings load
-        Load( game_s, frm_rate );
-    END
+//    IF ( !key( _r ) ) //Game reset on execute in case someone has screwed up the settings totally
+//        //Game Settings load
+//        Load( game_s, frm_rate );
+//    END
     Set_FPS( frm_rate, frm_skip ); //Frames per second
     //Do Pallette swapping buffer setup
     //when the pallette is swapped will clear the screen using this colour
@@ -3882,7 +3881,7 @@ BEGIN
     signal( type optionscr_bubbles, s_kill );
     Clear_screen();
     Set_FPS( frm_rate, frm_skip ); //Frames per second
-    Save( game_s, frm_rate ); //Save Settings
+//    Save( game_s, frm_rate ); //Save Settings
     tscreen_adv = TRUE;
     level_type = lv_title;
 END
@@ -15502,6 +15501,13 @@ BEGIN
     RETURN ( FALSE );
 END
 
+
+function save_png(int file, graph, string name)
+begin
+    map_save(file,graph,name);
+end
+
+
 //    demo_plat     = 902; //demo screen hardness map
 //    extend_plat   = 904; //extend room hardness map
 
@@ -15548,12 +15554,12 @@ BEGIN
     this_draw_loc = drawloc;
 
     IF ( level_type == lv_instr )
-        Background_Draw( 80 );
+        Background_Draw( 48 );
     ELSE
-        IF ( drawloc != 80 )
-            Background_Draw( 80 );
+        IF ( drawloc != 48 )
+            Background_Draw( 48 );
         ELSE
-            Background_Draw( 544 );
+            Background_Draw( 512 );
         END
     END
 
@@ -17797,11 +17803,6 @@ BEGIN
     bubbob[ 1 ].autofire = FALSE;
 END
 
-
-PROCESS Save_Settings()
-BEGIN
-    Save( game_s, frm_rate );
-END
 
 //This process has no graphic is a hidden process which gets rotated in a circle
 //to spit bubbles
