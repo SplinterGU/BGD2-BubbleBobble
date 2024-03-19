@@ -5344,7 +5344,7 @@ BEGIN
         palTable = &(colorTable[( Start_Col - 241 ) * 3]);
 //    end
 
-    shader_activate(shader_prg);
+//    shader_activate(shader_prg);
     REPEAT
         pal_del_count++; //palette rotation timer delay increase
         //Rotation delay
@@ -5361,11 +5361,11 @@ BEGIN
     UNTIL (( !exists( father ) OR father.kill OR kill ) AND pal_rot_count == 0 ) //have to check for seconds then
     //to see if the rotation has finishe
     if ( exists( father ) ) father.kill = TRUE; end //we are finshed rotating the palette and the timer has reached the correct time
-    shader_select(shader_prg);
+//    shader_select(shader_prg);
     shader_set_param( shader_parameters, UNIFORM_FLOAT3_ARRAY, colorTableLoc, pal_end_count, palTable );
     shader_set_param( shader_parameters, UNIFORM_INT, colorTableSizeLoc, pal_end_count );
     shader_set_param( shader_parameters, UNIFORM_INT, initialPositionLoc, 0 );
-    shader_deactivate();
+//    shader_deactivate();
     FRAME;
 END
 
